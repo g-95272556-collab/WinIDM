@@ -309,7 +309,10 @@ public partial class BrowserWindow : Window
         core.NewWindowRequested += (_, e) => OnNewWindowRequested(tab, e);
         core.DownloadStarting += (_, e) => _ = OnDownloadStartingAsync(tab, core, e);
         core.PermissionRequested += (_, e) => OnPermissionRequested(e);
-        core.ServerCertificateErrorDetected += (_, e) => OnCertificateError(e);
+        core.ServerCertificateErrorDetected += (_, e) =>
+        {
+            if (!TryCancelUpgradeCertificateError(tab, e)) OnCertificateError(e);
+        };
 
         // WebRTC can reveal the real address behind a proxy (03a: idm_pref_proxy_disable_webrtc).
         bool proxyWebRtc = _c.Settings.Bool(Keys.ProxyDisableWebRtc) && WinIDM.Engine.ProxyTypes.Endpoint(_c.RawSettings) is not null;
@@ -565,6 +568,7 @@ public partial class BrowserWindow : Window
     private async Task OnDownloadStartingAsync(BrowserTabViewModel tab, CoreWebView2 core, CoreWebView2DownloadStartingEventArgs e)
     {
         e.Cancel = true;
+        ForgetUpgrade(tab);
         var deferral = e.GetDeferral();
         try
         {
