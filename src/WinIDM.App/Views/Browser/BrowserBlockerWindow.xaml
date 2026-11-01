@@ -1,0 +1,252 @@
+<Window x:Class="WinIDM.App.Views.BrowserBlockerWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Ad blocker and filters"
+        Width="940" Height="580" MinWidth="760" MinHeight="460"
+        WindowStartupLocation="CenterOwner">
+    <Window.Resources>
+        <!-- Compact pill tabs: one visual language for the four manager pages. -->
+        <Style x:Key="ManagerTabs" TargetType="TabControl">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Padding" Value="0"/>
+        </Style>
+
+        <Style x:Key="ManagerTab" TargetType="TabItem">
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TabItem">
+                        <Border x:Name="TabBd" Background="Transparent" BorderBrush="Transparent" BorderThickness="1"
+                                CornerRadius="9" Padding="12,6" Margin="0,0,6,0" SnapsToDevicePixels="True">
+                            <ContentPresenter ContentSource="Header" HorizontalAlignment="Center"
+                                              VerticalAlignment="Center" RecognizesAccessKey="True"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="TabBd" Property="Background" Value="{DynamicResource AccentSoftBrush}"/>
+                                <Setter TargetName="TabBd" Property="BorderBrush" Value="{DynamicResource AccentSoftBorderBrush}"/>
+                                <Setter Property="Foreground" Value="{DynamicResource AccentBrush}"/>
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsMouseOver" Value="True"/>
+                                    <Condition Property="IsSelected" Value="False"/>
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="TabBd" Property="Background" Value="{DynamicResource ListHoverBrush}"/>
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Plain list boxes (whitelist, statistics helpers) on the product surface. -->
+        <Style x:Key="ManagerListBox" TargetType="ListBox">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
+        </Style>
+
+        <Style x:Key="ManagerListBoxRow" TargetType="ListBoxItem">
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            <Setter Property="Padding" Value="10,7"/>
+            <Setter Property="Margin" Value="0,1"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="RowBd" Background="Transparent" BorderBrush="Transparent" BorderThickness="1"
+                                CornerRadius="9" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="RowBd" Property="Background" Value="{DynamicResource ListHoverBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="RowBd" Property="Background" Value="{DynamicResource AccentSoftBrush}"/>
+                                <Setter TargetName="RowBd" Property="BorderBrush" Value="{DynamicResource AccentSoftBorderBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <DockPanel>
+        <!-- ================= Page header ================= -->
+        <Border DockPanel.Dock="Top" Height="56" Padding="20,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid Width="32" Height="32" VerticalAlignment="Center">
+                    <Border CornerRadius="9" Background="{DynamicResource AccentSoftBrush}"
+                            BorderBrush="{DynamicResource AccentSoftBorderBrush}" BorderThickness="1"/>
+                    <TextBlock Text="&#xE71C;" FontFamily="Segoe MDL2 Assets" FontSize="16"
+                               Foreground="{DynamicResource AccentBrush}"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Grid>
+                <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="Ad blocker and filters" Style="{StaticResource Heading}"/>
+                    <TextBlock Style="{StaticResource Muted}" FontSize="12" Margin="0,1,0,0"
+                               TextTrimming="CharacterEllipsis"
+                               Text="Filter lists, host sources, element rules and block statistics."/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ================= Footer actions ================= -->
+        <Border DockPanel.Dock="Bottom" Margin="20,14,20,16">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" x:Name="StatusText" Style="{StaticResource Muted}" TextWrapping="Wrap"
+                           VerticalAlignment="Center" Margin="0,0,16,0"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right"
+                            VerticalAlignment="Center">
+                    <Button Content="Rebuild engine" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0"
+                            Click="FilterRebuild_Click"/>
+                    <Button Content="Download / update" Style="{StaticResource PrimaryButton}"
+                            Click="FilterUpdate_Click"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ================= Body ================= -->
+        <Border Style="{StaticResource Card}" Margin="20,0,20,0" Padding="14">
+            <TabControl x:Name="Tabs" Style="{StaticResource ManagerTabs}" SelectionChanged="Tabs_SelectionChanged">
+
+                <!-- Filter lists: downloads happen only on user action -->
+                <TabItem Header="Filter lists" Style="{StaticResource ManagerTab}">
+                    <DockPanel Margin="0,12,0,0">
+                        <TextBlock DockPanel.Dock="Top" Style="{StaticResource Muted}" TextWrapping="Wrap"
+                                   Margin="2,0,2,10"
+                                   Text="Lists are downloaded only when you press 'Download / update'. No network request is made before that."/>
+                        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,10,0,0">
+                            <Button Content="Enable / disable" Style="{StaticResource SecondaryButton}"
+                                    Margin="0,0,8,0" Click="FilterToggle_Click"/>
+                            <Button Content="Add custom source..." Style="{StaticResource SecondaryButton}"
+                                    Margin="0,0,8,0" Click="FilterAddCustom_Click"/>
+                            <Button Content="Delete custom source" Style="{StaticResource DangerButton}"
+                                    Click="FilterRemoveCustom_Click"/>
+                        </StackPanel>
+                        <Border Style="{StaticResource SoftCard}" Padding="6">
+                            <ListView x:Name="FilterList" SelectionMode="Single">
+                                <ListView.View>
+                                    <GridView>
+                                        <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}" Width="170"/>
+                                        <GridViewColumn Header="Status" DisplayMemberBinding="{Binding State}" Width="90"/>
+                                        <GridViewColumn Header="Last updated" DisplayMemberBinding="{Binding Updated}" Width="130"/>
+                                        <GridViewColumn Header="Cache size" DisplayMemberBinding="{Binding Size}" Width="90"/>
+                                        <GridViewColumn Header="Source" DisplayMemberBinding="{Binding Source}" Width="210"/>
+                                    </GridView>
+                                </ListView.View>
+                            </ListView>
+                        </Border>
+                    </DockPanel>
+                </TabItem>
+
+                <!-- Hosts and whitelist -->
+                <TabItem Header="Hosts and whitelist" Style="{StaticResource ManagerTab}">
+                    <Grid Margin="0,12,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="14"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+
+                        <Border Grid.Column="0" Style="{StaticResource SoftCard}" Padding="12">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Top" Text="Host sources"
+                                           Style="{StaticResource Subheading}" Margin="0,0,0,8"/>
+                                <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,10,0,0">
+                                    <Button Content="Add from URL (HTTPS)..." Style="{StaticResource SecondaryButton}"
+                                            Margin="0,0,8,0" Click="HostAdd_Click"/>
+                                    <Button Content="Enable / disable" Style="{StaticResource SecondaryButton}"
+                                            Margin="0,0,8,0" Click="HostToggle_Click"/>
+                                    <Button Content="Delete" Style="{StaticResource DangerButton}"
+                                            Click="HostRemove_Click"/>
+                                </StackPanel>
+                                <ListView x:Name="HostList" SelectionMode="Single">
+                                    <ListView.View>
+                                        <GridView>
+                                            <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}" Width="110"/>
+                                            <GridViewColumn Header="Status" DisplayMemberBinding="{Binding State}" Width="64"/>
+                                            <GridViewColumn Header="Source" DisplayMemberBinding="{Binding Source}" Width="130"/>
+                                        </GridView>
+                                    </ListView.View>
+                                </ListView>
+                            </DockPanel>
+                        </Border>
+
+                        <Border Grid.Column="2" Style="{StaticResource SoftCard}" Padding="12">
+                            <DockPanel>
+                                <TextBlock DockPanel.Dock="Top" TextWrapping="Wrap"
+                                           Text="Host whitelist (domains that are not blocked)"
+                                           Style="{StaticResource Subheading}" Margin="0,0,0,8"/>
+                                <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,10,0,0">
+                                    <Button Content="Add domain..." Style="{StaticResource SecondaryButton}"
+                                            Margin="0,0,8,0" Click="WhitelistAdd_Click"/>
+                                    <Button Content="Remove" Style="{StaticResource DangerButton}"
+                                            Click="WhitelistRemove_Click"/>
+                                </StackPanel>
+                                <ListBox x:Name="WhitelistList" SelectionMode="Single"
+                                         Style="{StaticResource ManagerListBox}"
+                                         ItemContainerStyle="{StaticResource ManagerListBoxRow}"/>
+                            </DockPanel>
+                        </Border>
+                    </Grid>
+                </TabItem>
+
+                <!-- Manual element rules -->
+                <TabItem Header="Element rules" Style="{StaticResource ManagerTab}">
+                    <DockPanel Margin="0,12,0,0">
+                        <TextBlock DockPanel.Dock="Top" Style="{StaticResource Muted}" TextWrapping="Wrap"
+                                   Margin="2,0,2,10"
+                                   Text="Rules are created with 'Hide element' in the browser menu. Delete a rule here if it hides content it should not."/>
+                        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,10,0,0">
+                            <Button Content="Delete selected rule" Style="{StaticResource DangerButton}"
+                                    Click="RuleRemove_Click"/>
+                        </StackPanel>
+                        <Border Style="{StaticResource SoftCard}" Padding="6">
+                            <ListView x:Name="RuleList" SelectionMode="Single">
+                                <ListView.View>
+                                    <GridView>
+                                        <GridViewColumn Header="Host" DisplayMemberBinding="{Binding Host}" Width="200"/>
+                                        <GridViewColumn Header="Selector" DisplayMemberBinding="{Binding Selector}" Width="470"/>
+                                    </GridView>
+                                </ListView.View>
+                            </ListView>
+                        </Border>
+                    </DockPanel>
+                </TabItem>
+
+                <!-- Statistics -->
+                <TabItem Header="Statistics" Style="{StaticResource ManagerTab}">
+                    <DockPanel Margin="0,12,0,0">
+                        <StackPanel DockPanel.Dock="Bottom" Orientation="Horizontal" Margin="0,10,0,0">
+                            <Button Content="Reset host block statistics" Style="{StaticResource DangerButton}"
+                                    Click="StatsReset_Click"/>
+                        </StackPanel>
+                        <Border Style="{StaticResource SoftCard}" Padding="14">
+                            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                <TextBlock x:Name="StatsText" FontFamily="Consolas" FontSize="12"
+                                           TextWrapping="Wrap"/>
+                            </ScrollViewer>
+                        </Border>
+                    </DockPanel>
+                </TabItem>
+            </TabControl>
+        </Border>
+    </DockPanel>
+</Window>

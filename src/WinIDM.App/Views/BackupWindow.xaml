@@ -1,0 +1,295 @@
+<Window x:Class="WinIDM.App.Views.BackupWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Backup and restore"
+        Width="760" SizeToContent="Height" MaxHeight="760" ResizeMode="CanMinimize"
+        WindowStartupLocation="CenterOwner">
+
+    <Window.Resources>
+        <!-- Label cell of a two-column settings row: primary text that wraps inside the fixed label column. -->
+        <Style x:Key="RowLabel" TargetType="TextBlock" BasedOn="{StaticResource Subheading}">
+            <Setter Property="VerticalAlignment" Value="Center"/>
+            <Setter Property="TextWrapping" Value="Wrap"/>
+            <Setter Property="Margin" Value="0,0,14,0"/>
+        </Style>
+    </Window.Resources>
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ================= Page header ================= -->
+        <Border Grid.Row="0" Padding="20,18,20,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Border Width="40" Height="40" CornerRadius="12" VerticalAlignment="Top"
+                        Background="{DynamicResource AccentSoftBrush}"
+                        BorderBrush="{DynamicResource AccentSoftBorderBrush}" BorderThickness="1">
+                    <TextBlock Text="&#xE74E;" FontFamily="Segoe MDL2 Assets" FontSize="19"
+                               Foreground="{DynamicResource AccentBrush}"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="Backup and restore" Style="{StaticResource Heading}"/>
+                    <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,3,0,0"
+                               Text="Create an encrypted backup of your data, then restore it on any PC."/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ================= Body ================= -->
+        <ScrollViewer Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+            <StackPanel Margin="20,0,20,8">
+
+                <!-- Destination: selection, local folder and REST endpoint -->
+                <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="Destination" Style="{StaticResource Heading}"/>
+                        <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,4,0,0"
+                                   Text="Where backup files are uploaded to, listed and downloaded from."/>
+
+                        <DockPanel Margin="0,14,0,0">
+                            <Button DockPanel.Dock="Right" Content="Save destination"
+                                    Command="{Binding SaveDestinationCommand}" Margin="10,0,0,0"/>
+                            <ComboBox Width="260" HorizontalAlignment="Left" ItemsSource="{Binding DestinationChoices}"
+                                      SelectedItem="{Binding Destination}"/>
+                        </DockPanel>
+
+                        <Border Style="{StaticResource Divider}" Margin="0,14"/>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="210"/>
+                                <ColumnDefinition Width="*"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="Local: folder" Style="{StaticResource RowLabel}"/>
+                            <TextBox Grid.Column="1" ToolTip="Local backup folder"
+                                     Text="{Binding LocalFolder, UpdateSourceTrigger=PropertyChanged}"/>
+                            <Button Grid.Column="2" Content="Choose..." Click="PickFolder_Click" Margin="8,0,0,0"/>
+                        </Grid>
+
+                        <Grid Margin="0,10,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="210"/>
+                                <ColumnDefinition Width="*"/>
+                            </Grid.ColumnDefinitions>
+                            <TextBlock Grid.Column="0" Text="REST server (https only, except localhost)"
+                                       Style="{StaticResource RowLabel}"/>
+                            <StackPanel Grid.Column="1">
+                                <TextBox ToolTip="REST server URL"
+                                         Text="{Binding RestUrl, UpdateSourceTrigger=PropertyChanged}"/>
+                                <PasswordBox x:Name="RestTokenBox" Margin="0,8,0,0" ToolTip="REST access token"/>
+                            </StackPanel>
+                        </Grid>
+                    </StackPanel>
+                </Border>
+
+                <!-- Cloud accounts: Google Drive and Dropbox -->
+                <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="Cloud accounts" Style="{StaticResource Heading}"/>
+                        <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,4,0,0"
+                                   Text="WinIDM ships without OAuth credentials: use your own client ID for each provider."/>
+
+                        <Border Style="{StaticResource Divider}" Margin="0,14"/>
+
+                        <TextBlock Text="Google Drive: your own OAuth client ID (no embedded client ID)"
+                                   Style="{StaticResource Subheading}" TextWrapping="Wrap"/>
+                        <TextBox Margin="0,8,0,0" ToolTip="Google OAuth client ID"
+                                 Text="{Binding GoogleClientId, UpdateSourceTrigger=PropertyChanged}"/>
+                        <PasswordBox x:Name="GoogleSecretBox" Margin="0,8,0,0" ToolTip="Google OAuth client secret"/>
+                        <DockPanel Margin="0,10,0,0">
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                <Button Content="Connect..." Command="{Binding ConnectCommand}" CommandParameter="google"/>
+                                <Button Content="Disconnect" Command="{Binding DisconnectCommand}"
+                                        CommandParameter="google" Margin="8,0,0,0"/>
+                            </StackPanel>
+                            <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" VerticalAlignment="Center"
+                                       Margin="0,0,12,0" Text="{Binding GoogleStatus}"/>
+                        </DockPanel>
+
+                        <Border Style="{StaticResource Divider}" Margin="0,14"/>
+
+                        <TextBlock Text="Dropbox: your own OAuth client ID" Style="{StaticResource Subheading}"
+                                   TextWrapping="Wrap"/>
+                        <TextBox Margin="0,8,0,0" ToolTip="Dropbox app key"
+                                 Text="{Binding DropboxClientId, UpdateSourceTrigger=PropertyChanged}"/>
+                        <PasswordBox x:Name="DropboxSecretBox" Margin="0,8,0,0" ToolTip="Dropbox app secret"/>
+                        <DockPanel Margin="0,10,0,0">
+                            <StackPanel DockPanel.Dock="Right" Orientation="Horizontal">
+                                <Button Content="Connect..." Command="{Binding ConnectCommand}" CommandParameter="dropbox"/>
+                                <Button Content="Disconnect" Command="{Binding DisconnectCommand}"
+                                        CommandParameter="dropbox" Margin="8,0,0,0"/>
+                            </StackPanel>
+                            <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" VerticalAlignment="Center"
+                                       Margin="0,0,12,0" Text="{Binding DropboxStatus}"/>
+                        </DockPanel>
+
+                        <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,14,0,0"
+                                   Text="OAuth tokens are stored on disk encrypted with DPAPI (current Windows account). They are not included in backups."/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Backup file: the path used by Create backup and Restore (the Edit next to "Save to...") -->
+                <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="Backup file" Style="{StaticResource Heading}"/>
+                        <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,4,0,0"
+                                   Text="The file to create, or an existing backup file to read from."/>
+                        <DockPanel Margin="0,14,0,0">
+                            <Button DockPanel.Dock="Right" Content="Restore from..." Click="PickOpen_Click" Margin="8,0,0,0"/>
+                            <Button DockPanel.Dock="Right" Content="Save to..." Click="PickSave_Click" Margin="8,0,0,0"/>
+                            <TextBox ToolTip="Backup file path"
+                                     Text="{Binding FilePath, UpdateSourceTrigger=PropertyChanged}"/>
+                        </DockPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- Backups found at the destination -->
+                <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                    <StackPanel>
+                        <DockPanel>
+                            <Button DockPanel.Dock="Right" Content="List" Command="{Binding ListRemoteCommand}"
+                                    Margin="12,0,0,0"/>
+                            <TextBlock Text="Backups at the selected destination" Style="{StaticResource Heading}"
+                                       TextWrapping="Wrap" VerticalAlignment="Center"/>
+                        </DockPanel>
+                        <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,4,0,0"
+                                   Text="List the files at the destination (Local, Google Drive, Dropbox, or REST), select one, then download and restore it or delete it."/>
+
+                        <Border Style="{StaticResource SoftCard}" Padding="6" Margin="0,12,0,10">
+                            <ListView ItemsSource="{Binding RemoteBackups}" SelectedItem="{Binding SelectedRemoteBackup}"
+                                      Height="150">
+                                <ListView.View>
+                                    <GridView>
+                                        <GridViewColumn Header="Name" Width="320" DisplayMemberBinding="{Binding Name}"/>
+                                        <GridViewColumn Header="Updated (UTC)" Width="150" DisplayMemberBinding="{Binding ModifiedUtc, StringFormat='{}{0:yyyy-MM-dd HH:mm}'}"/>
+                                        <GridViewColumn Header="Size (bytes)" Width="90" DisplayMemberBinding="{Binding SizeBytes}"/>
+                                    </GridView>
+                                </ListView.View>
+                            </ListView>
+                        </Border>
+
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                            <Button Content="Download and restore" Command="{Binding RestoreRemoteCommand}"
+                                    Margin="0,0,8,0"/>
+                            <Button Content="Delete" Style="{StaticResource DangerButton}"
+                                    Command="{Binding DeleteRemoteCommand}"/>
+                        </StackPanel>
+                    </StackPanel>
+                </Border>
+
+                <!-- What the backup contains, and its password -->
+                <Border Style="{StaticResource Card}" Margin="0,0,0,12">
+                    <StackPanel>
+                        <TextBlock Text="Backup contents" Style="{StaticResource Heading}"/>
+                        <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,4,0,0"
+                                   Text="Choose what the backup contains and whether it is encrypted."/>
+
+                        <TextBlock Text="Categories" Style="{StaticResource Subheading}" Margin="0,14,0,8"/>
+                        <ItemsControl ItemsSource="{Binding Categories}">
+                            <ItemsControl.ItemsPanel>
+                                <ItemsPanelTemplate>
+                                    <UniformGrid Columns="2"/>
+                                </ItemsPanelTemplate>
+                            </ItemsControl.ItemsPanel>
+                            <ItemsControl.ItemTemplate>
+                                <DataTemplate>
+                                    <CheckBox Content="{Binding Label}" IsChecked="{Binding IsSelected}"
+                                              Margin="0,0,12,8"/>
+                                </DataTemplate>
+                            </ItemsControl.ItemTemplate>
+                        </ItemsControl>
+
+                        <Border Style="{StaticResource Divider}" Margin="0,4"/>
+
+                        <TextBlock Text="Backup password (optional, AES-256-GCM)" Style="{StaticResource Subheading}"
+                                   Margin="0,0,0,8"/>
+                        <PasswordBox x:Name="PwdBox" ToolTip="Backup password (never stored)"/>
+                        <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,8,0,0"
+                                   Text="The password is not stored. The Passwords category requires at least 12 characters. If it is lost, the backup cannot be restored."/>
+                        <CheckBox Content="Overwrite existing data during restore (overwrite mode; confirmation required)"
+                                  IsChecked="{Binding Overwrite}" Margin="0,14,0,0"/>
+                    </StackPanel>
+                </Border>
+
+                <!-- Scheduled backups -->
+                <Border Style="{StaticResource Card}">
+                    <StackPanel>
+                        <TextBlock Text="Scheduled backup" Style="{StaticResource Heading}"/>
+                        <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,4,0,0"
+                                   Text="Run unattended backups on a timer and keep only the newest copies."/>
+
+                        <CheckBox Content="Enable periodic backups (categories selected above)"
+                                  IsChecked="{Binding ScheduleEnabled}" Margin="0,14,0,0"/>
+
+                        <Grid Margin="0,12,0,0">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="210"/>
+                                <ColumnDefinition Width="Auto"/>
+                            </Grid.ColumnDefinitions>
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="Auto"/>
+                                <RowDefinition Height="Auto"/>
+                            </Grid.RowDefinitions>
+                            <TextBlock Grid.Row="0" Grid.Column="0" Text="Interval (hours, 0 = none):"
+                                       Style="{StaticResource RowLabel}" Margin="0,0,14,8"/>
+                            <TextBox Grid.Row="0" Grid.Column="1" Width="90" Margin="0,0,0,8"
+                                     ToolTip="Hours between scheduled backups"
+                                     Text="{Binding ScheduleIntervalHours}"/>
+                            <TextBlock Grid.Row="1" Grid.Column="0" Text="Retention (0 = keep all):"
+                                       Style="{StaticResource RowLabel}"/>
+                            <TextBox Grid.Row="1" Grid.Column="1" Width="90"
+                                     ToolTip="Number of backups to keep"
+                                     Text="{Binding ScheduleRetention}"/>
+                        </Grid>
+
+                        <CheckBox Content="Back up when the app starts" IsChecked="{Binding ScheduleOnOpen}"
+                                  Margin="0,14,0,0"/>
+                        <CheckBox Content="Back up before the app closes" IsChecked="{Binding ScheduleOnClose}"
+                                  Margin="0,8,0,0"/>
+                        <PasswordBox x:Name="SchedPwdBox" Margin="0,12,0,0"
+                                     ToolTip="Scheduled backup password (stored DPAPI-protected)"/>
+                        <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,8,0,0"
+                                   Text="Scheduled backups MUST be encrypted. The password is stored protected by DPAPI; leave the box empty to keep the existing one."/>
+
+                        <DockPanel Margin="0,12,0,0">
+                            <Button DockPanel.Dock="Right" Content="Save schedule"
+                                    Command="{Binding SaveScheduleCommand}" Margin="12,0,0,0"/>
+                            <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" VerticalAlignment="Center"
+                                       Text="{Binding LastStatus, StringFormat='Last scheduled backup: {0}'}"/>
+                        </DockPanel>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+
+        <!-- ================= Running-operation status ================= -->
+        <Border Grid.Row="2" Margin="20,12,20,0">
+            <StackPanel>
+                <TextBlock Text="{Binding Status}" TextWrapping="Wrap" MinHeight="18"/>
+                <TextBlock Style="{StaticResource Muted}" Text="{Binding TransferText}" Margin="0,3,0,0"/>
+            </StackPanel>
+        </Border>
+
+        <!-- ================= Footer ================= -->
+        <Border Grid.Row="3" Margin="20,14,20,16">
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                <Button Content="Cancel" Style="{StaticResource GhostButton}"
+                        Command="{Binding CancelCommand}" Margin="0,0,8,0"/>
+                <Button Content="Create backup" Style="{StaticResource PrimaryButton}"
+                        Command="{Binding BackupCommand}" Margin="0,0,8,0"/>
+                <Button Content="Restore" Command="{Binding RestoreCommand}" Margin="0,0,8,0"/>
+                <Button Content="Close" IsCancel="True" Click="Close_Click"/>
+            </StackPanel>
+        </Border>
+    </Grid>
+</Window>

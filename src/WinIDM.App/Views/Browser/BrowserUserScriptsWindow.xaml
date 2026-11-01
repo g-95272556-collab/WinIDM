@@ -1,0 +1,96 @@
+<Window x:Class="WinIDM.App.Views.BrowserUserScriptsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="User script manager"
+        Width="960" Height="560" MinWidth="720" MinHeight="420"
+        WindowStartupLocation="CenterOwner">
+    <DockPanel>
+        <!-- ================= Page header ================= -->
+        <Border DockPanel.Dock="Top" Height="56" Padding="20,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid Width="32" Height="32" VerticalAlignment="Center">
+                    <Border CornerRadius="9" Background="{DynamicResource AccentSoftBrush}"
+                            BorderBrush="{DynamicResource AccentSoftBorderBrush}" BorderThickness="1"/>
+                    <TextBlock Text="&#xE943;" FontFamily="Segoe MDL2 Assets" FontSize="16"
+                               Foreground="{DynamicResource AccentBrush}"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Grid>
+                <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="User script manager" Style="{StaticResource Heading}"/>
+                    <TextBlock Style="{StaticResource Muted}" FontSize="12" Margin="0,1,0,0"
+                               TextTrimming="CharacterEllipsis"
+                               Text="Install, approve and update user scripts. Nothing runs without approval."/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ================= Footer actions ================= -->
+        <Border DockPanel.Dock="Bottom" Margin="20,14,20,16">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" x:Name="StatusText" Style="{StaticResource Muted}" TextWrapping="Wrap"
+                           VerticalAlignment="Center" Margin="0,0,16,0"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right"
+                            VerticalAlignment="Center">
+                    <Button Content="Log" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0"
+                            Click="Log_Click"/>
+                    <Button Content="Permissions..." Style="{StaticResource SecondaryButton}" Margin="0,0,8,0"
+                            Click="Permissions_Click"/>
+                    <Button Content="Update this script" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0"
+                            Click="UpdateOne_Click"/>
+                    <Button Content="Delete" Style="{StaticResource DangerButton}" Margin="0,0,16,0"
+                            Click="Remove_Click"/>
+                    <!-- Label ("Enable" / "Disable") is set by the code-behind from the selected script. -->
+                    <Button x:Name="ToggleButton" Content="Enable / disable" Style="{StaticResource PrimaryButton}"
+                            Click="Toggle_Click"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ================= Body ================= -->
+        <Border Style="{StaticResource Card}" Margin="20,0,20,0" Padding="14">
+            <DockPanel>
+                <StackPanel DockPanel.Dock="Top" Margin="0,0,0,12">
+                    <WrapPanel>
+                        <Button Content="Install from URL..." Style="{StaticResource SecondaryButton}"
+                                Margin="0,0,8,6" Click="InstallUrl_Click"/>
+                        <Button Content="Install file..." Style="{StaticResource SecondaryButton}"
+                                Margin="0,0,8,6" Click="InstallFile_Click"/>
+                        <Button Content="Check for updates now" Style="{StaticResource SecondaryButton}"
+                                Margin="0,0,8,6" Click="CheckUpdates_Click"/>
+                    </WrapPanel>
+                    <WrapPanel Margin="0,8,0,0">
+                        <CheckBox x:Name="DailyCheck"
+                                  Content="Check for updates daily when the browser opens (requires consent)"
+                                  Margin="0,0,18,6" Click="Prefs_Changed"/>
+                        <CheckBox x:Name="AutoApply"
+                                  Content="Install updates automatically (without confirmation)"
+                                  Margin="0,0,0,6" Click="Prefs_Changed"/>
+                    </WrapPanel>
+                    <Border Style="{StaticResource Divider}" Margin="0,6,0,0"/>
+                </StackPanel>
+
+                <Border Style="{StaticResource SoftCard}" Padding="6">
+                    <ListView x:Name="List" SelectionMode="Single" SelectionChanged="List_SelectionChanged">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Header="Name" DisplayMemberBinding="{Binding Name}" Width="200"/>
+                                <GridViewColumn Header="Version" DisplayMemberBinding="{Binding Version}" Width="70"/>
+                                <GridViewColumn Header="Status" DisplayMemberBinding="{Binding State}" Width="80"/>
+                                <GridViewColumn Header="Approved permissions" DisplayMemberBinding="{Binding Approved}" Width="240"/>
+                                <GridViewColumn Header="Source" DisplayMemberBinding="{Binding Source}" Width="260"/>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                </Border>
+            </DockPanel>
+        </Border>
+    </DockPanel>
+</Window>

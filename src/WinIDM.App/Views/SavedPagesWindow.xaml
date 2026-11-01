@@ -1,0 +1,84 @@
+<Window x:Class="WinIDM.App.Views.SavedPagesWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Saved pages" Width="900" Height="560" MinWidth="880" MinHeight="420"
+        WindowStartupLocation="CenterOwner">
+
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ================= Page header ================= -->
+        <Border Grid.Row="0" Padding="20,18,20,12">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Border Width="40" Height="40" CornerRadius="12" VerticalAlignment="Top"
+                        Background="{DynamicResource AccentSoftBrush}"
+                        BorderBrush="{DynamicResource AccentSoftBorderBrush}" BorderThickness="1">
+                    <TextBlock Text="&#xE774;" FontFamily="Segoe MDL2 Assets" FontSize="18"
+                               Foreground="{DynamicResource AccentBrush}"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Border>
+                <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="Saved pages" Style="{StaticResource Heading}"/>
+                    <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,3,0,0"
+                               Text="Pages saved as MHTML or PDF. Files stay in the location you chose when saving."/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ================= Body: the saved-pages list ================= -->
+        <Border Grid.Row="1" Style="{StaticResource Card}" Margin="20,0,20,0" Padding="8">
+            <Grid>
+                <ListView x:Name="List" SelectionMode="Single">
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn Header="Title" Width="290" DisplayMemberBinding="{Binding Title}"/>
+                            <GridViewColumn Header="Format" Width="70" DisplayMemberBinding="{Binding Format}"/>
+                            <GridViewColumn Header="Saved" Width="150" DisplayMemberBinding="{Binding SavedAt, StringFormat={}{0:yyyy-MM-dd HH:mm}}"/>
+                            <GridViewColumn Header="File" Width="300" DisplayMemberBinding="{Binding FilePath}"/>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+
+                <!-- Empty state: shown while the list has no rows -->
+                <StackPanel VerticalAlignment="Center" HorizontalAlignment="Center" MaxWidth="380"
+                            IsHitTestVisible="False"
+                            Visibility="{Binding HasItems, ElementName=List, Converter={StaticResource InvBoolToVis}}">
+                    <Border Width="56" Height="56" CornerRadius="18" Background="{DynamicResource AccentSoftBrush}"
+                            HorizontalAlignment="Center">
+                        <TextBlock Text="&#xE774;" FontFamily="Segoe MDL2 Assets" FontSize="23"
+                                   Foreground="{DynamicResource AccentBrush}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+                    <TextBlock Text="No saved pages yet" FontSize="16" FontWeight="SemiBold"
+                               HorizontalAlignment="Center" Margin="0,16,0,5"/>
+                    <TextBlock Style="{StaticResource Muted}" TextAlignment="Center" TextWrapping="Wrap"
+                               Text="Pages you save as MHTML or PDF from the browser are listed here."/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ================= Footer ================= -->
+        <Grid Grid.Row="2" Margin="20,14,20,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Name="StatusText" Style="{StaticResource Muted}" VerticalAlignment="Center"
+                       TextWrapping="Wrap" Margin="0,0,16,0"/>
+            <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+                <Button Content="Open" Style="{StaticResource PrimaryButton}" Click="Open_Click"
+                        Margin="0,0,8,0"/>
+                <Button Content="Remove from list" Click="Forget_Click" Margin="0,0,8,0"/>
+                <Button Content="Delete file" Style="{StaticResource DangerButton}" Click="Delete_Click"/>
+            </StackPanel>
+        </Grid>
+    </Grid>
+</Window>

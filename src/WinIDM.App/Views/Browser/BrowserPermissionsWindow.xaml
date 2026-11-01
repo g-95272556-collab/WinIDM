@@ -1,0 +1,120 @@
+<Window x:Class="WinIDM.App.Views.BrowserPermissionsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Site permissions"
+        Width="820" Height="540" MinWidth="620" MinHeight="400"
+        WindowStartupLocation="CenterOwner">
+    <Window.Resources>
+        <!-- Plain list box for the session-only SSL exceptions. -->
+        <Style x:Key="ExceptionListBox" TargetType="ListBox">
+            <Setter Property="Background" Value="Transparent"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            <Setter Property="ScrollViewer.HorizontalScrollBarVisibility" Value="Disabled"/>
+        </Style>
+
+        <Style x:Key="ExceptionListRow" TargetType="ListBoxItem">
+            <Setter Property="Foreground" Value="{DynamicResource TextPrimaryBrush}"/>
+            <Setter Property="Padding" Value="10,7"/>
+            <Setter Property="Margin" Value="0,1"/>
+            <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ListBoxItem">
+                        <Border x:Name="RowBd" Background="Transparent" BorderBrush="Transparent" BorderThickness="1"
+                                CornerRadius="9" Padding="{TemplateBinding Padding}" SnapsToDevicePixels="True">
+                            <ContentPresenter VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="RowBd" Property="Background" Value="{DynamicResource ListHoverBrush}"/>
+                            </Trigger>
+                            <Trigger Property="IsSelected" Value="True">
+                                <Setter TargetName="RowBd" Property="Background" Value="{DynamicResource AccentSoftBrush}"/>
+                                <Setter TargetName="RowBd" Property="BorderBrush" Value="{DynamicResource AccentSoftBorderBrush}"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <DockPanel>
+        <!-- ================= Page header ================= -->
+        <Border DockPanel.Dock="Top" Height="56" Padding="20,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid Width="32" Height="32" VerticalAlignment="Center">
+                    <Border CornerRadius="9" Background="{DynamicResource AccentSoftBrush}"
+                            BorderBrush="{DynamicResource AccentSoftBorderBrush}" BorderThickness="1"/>
+                    <TextBlock Text="&#xE785;" FontFamily="Segoe MDL2 Assets" FontSize="16"
+                               Foreground="{DynamicResource AccentBrush}"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Grid>
+                <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="Site permissions" Style="{StaticResource Heading}"/>
+                    <TextBlock Style="{StaticResource Muted}" FontSize="12" Margin="0,1,0,0"
+                               TextTrimming="CharacterEllipsis"
+                               Text="Decisions remembered for each site. Delete one to be asked again on the next visit."/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ================= Footer actions ================= -->
+        <Border DockPanel.Dock="Bottom" Margin="20,14,20,16">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" x:Name="StatusText" Style="{StaticResource Muted}" TextWrapping="Wrap"
+                           VerticalAlignment="Center" Margin="0,0,16,0"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right"
+                            VerticalAlignment="Center">
+                    <Button Content="Delete all" Style="{StaticResource DangerButton}" Margin="0,0,16,0"
+                            Click="RemoveAll_Click"/>
+                    <Button Content="Delete" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0"
+                            Click="Remove_Click"/>
+                    <Button Content="Allow / block" Style="{StaticResource PrimaryButton}"
+                            Click="Toggle_Click"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ================= Body ================= -->
+        <Border Style="{StaticResource Card}" Margin="20,0,20,0" Padding="14">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*"/>
+                    <RowDefinition Height="Auto"/>
+                    <RowDefinition Height="120"/>
+                </Grid.RowDefinitions>
+
+                <Border Grid.Row="0" Style="{StaticResource SoftCard}" Padding="6">
+                    <ListView x:Name="PermissionList" SelectionMode="Single">
+                        <ListView.View>
+                            <GridView>
+                                <GridViewColumn Header="Site" DisplayMemberBinding="{Binding Origin}" Width="250"/>
+                                <GridViewColumn Header="Type" DisplayMemberBinding="{Binding Kind}" Width="170"/>
+                                <GridViewColumn Header="Decision" DisplayMemberBinding="{Binding Decision}" Width="110"/>
+                            </GridView>
+                        </ListView.View>
+                    </ListView>
+                </Border>
+
+                <TextBlock Grid.Row="1" Text="SSL error exceptions (current session only)"
+                           Style="{StaticResource SectionLabel}" Margin="2,14,2,8"/>
+
+                <Border Grid.Row="2" Style="{StaticResource SoftCard}" Padding="6">
+                    <ListBox x:Name="SslList" SelectionMode="Single"
+                             Style="{StaticResource ExceptionListBox}"
+                             ItemContainerStyle="{StaticResource ExceptionListRow}"/>
+                </Border>
+            </Grid>
+        </Border>
+    </DockPanel>
+</Window>

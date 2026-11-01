@@ -1,0 +1,26 @@
+# Build output
+[Bb]in/
+[Oo]bj/
+artifacts/
+publish/
+TestResults/
+*.binlog
+
+# IDE
+.vs/
+.vscode/
+.idea/
+*.user
+*.suo
+*.rsuser
+
+# Agent scratch files
+.dsh-write-test.txt
+.codewhale/
+.claude/settings.local.json
+
+# Local data
+*.db
+*.db-shm
+*.db-wal
+*.log

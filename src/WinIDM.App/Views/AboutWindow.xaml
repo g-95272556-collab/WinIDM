@@ -1,0 +1,82 @@
+<Window x:Class="WinIDM.App.Views.AboutWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="About WinIDM"
+        Width="700" Height="640" MinWidth="560" MinHeight="460"
+        WindowStartupLocation="CenterOwner">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- ================= Page header ================= -->
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="20,18,20,12">
+            <Border Width="40" Height="40" CornerRadius="12" Background="{DynamicResource AccentSoftBrush}"
+                    BorderBrush="{DynamicResource AccentSoftBorderBrush}" BorderThickness="1">
+                <TextBlock Text="&#xE946;" FontFamily="Segoe MDL2 Assets" FontSize="18"
+                           Foreground="{DynamicResource AccentBrush}"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Border>
+            <StackPanel Margin="12,0,0,0" VerticalAlignment="Center">
+                <TextBlock Text="About WinIDM" Style="{StaticResource Heading}"/>
+                <TextBlock Text="Product details, third-party licenses and diagnostics."
+                           Style="{StaticResource Muted}" Margin="0,2,0,0"/>
+            </StackPanel>
+        </StackPanel>
+
+        <!-- ================= Body ================= -->
+        <Grid Grid.Row="1" Margin="20,0,20,0">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*" MinHeight="90"/>
+            </Grid.RowDefinitions>
+
+            <!-- Product card -->
+            <Border Grid.Row="0" Style="{StaticResource Card}" Margin="0,0,0,12">
+                <Grid>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+
+                    <Border Grid.Column="0" Width="58" Height="58" CornerRadius="16" VerticalAlignment="Top"
+                            Background="{DynamicResource AccentBrush}">
+                        <TextBlock Text="&#xE896;" FontFamily="Segoe MDL2 Assets" FontSize="24"
+                                   Foreground="{DynamicResource AccentTextBrush}"
+                                   HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                    </Border>
+
+                    <StackPanel Grid.Column="1" Margin="16,0,0,0">
+                        <TextBlock Text="WinIDM" Style="{StaticResource Heading}"/>
+                        <TextBlock x:Name="VersionText" Style="{StaticResource Muted}" FontSize="11.5"
+                                   TextWrapping="Wrap" Margin="0,3,0,0"/>
+                        <TextBlock Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,8,0,0"
+                                   Text="A Windows clone of IDM+. No telemetry. No network calls other than the ones you request (downloads, cloud backups, update checks against your own URL)."/>
+                    </StackPanel>
+                </Grid>
+            </Border>
+
+            <!-- Third-party licenses -->
+            <Border Grid.Row="1" Style="{StaticResource Card}" Padding="12">
+                <TextBox x:Name="LicenseBox" IsReadOnly="True" TextWrapping="Wrap" VerticalScrollBarVisibility="Auto"
+                         Background="{DynamicResource SurfaceAltBrush}" BorderThickness="0"
+                         Padding="12" FontFamily="Consolas" FontSize="12"/>
+            </Border>
+        </Grid>
+
+        <!-- ================= Status line ================= -->
+        <TextBlock Grid.Row="2" x:Name="StatusText" TextWrapping="Wrap" Style="{StaticResource Muted}"
+                   Margin="20,10,20,0" MinHeight="18"/>
+
+        <!-- ================= Footer ================= -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal" HorizontalAlignment="Right" Margin="20,14,20,16">
+            <Button Content="Check for updates" Style="{StaticResource PrimaryButton}" Margin="0,0,8,0"
+                    Click="CheckUpdate_Click"/>
+            <Button Content="Export diagnostics..." Margin="0,0,8,0" Click="Diagnostics_Click"/>
+            <Button Content="Close" IsCancel="True" Click="Close_Click"/>
+        </StackPanel>
+    </Grid>
+</Window>

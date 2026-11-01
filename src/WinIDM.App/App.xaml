@@ -1,0 +1,18 @@
+<Application x:Class="WinIDM.App.App"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:v="clr-namespace:WinIDM.App.Views"
+             ShutdownMode="OnExplicitShutdown">
+    <Application.Resources>
+        <ResourceDictionary>
+            <v:BoolToVisibilityConverter x:Key="BoolToVis"/>
+            <v:InverseBoolToVisibilityConverter x:Key="InvBoolToVis"/>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="Themes/Common.xaml"/>
+                <!-- The palette is swapped by ThemeService (Light.xaml / Dark.xaml) -->
+                <ResourceDictionary Source="Themes/Light.xaml"/>
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </Application.Resources>
+</Application>
+

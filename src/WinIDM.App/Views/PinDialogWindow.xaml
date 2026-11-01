@@ -1,0 +1,67 @@
+<Window x:Class="WinIDM.App.Views.PinDialogWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Password manager PIN" Width="440" SizeToContent="Height"
+        ResizeMode="NoResize" WindowStartupLocation="CenterOwner" ShowInTaskbar="False">
+    <Window.Resources>
+        <!-- Compact field label for the three PIN boxes. -->
+        <Style x:Key="PinFieldLabel" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="12"/>
+            <Setter Property="FontWeight" Value="SemiBold"/>
+            <Setter Property="Foreground" Value="{DynamicResource TextSecondaryBrush}"/>
+            <Setter Property="Margin" Value="0,0,0,5"/>
+        </Style>
+    </Window.Resources>
+
+    <StackPanel>
+        <!-- ================= Page header ================= -->
+        <Grid Margin="20,12,20,8">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <Grid Width="36" Height="36" VerticalAlignment="Top">
+                <Border CornerRadius="11" Background="{DynamicResource AccentSoftBrush}"
+                        BorderBrush="{DynamicResource AccentSoftBorderBrush}" BorderThickness="1"/>
+                <TextBlock Text="&#xE72E;" FontFamily="Segoe MDL2 Assets" FontSize="16"
+                           Foreground="{DynamicResource AccentBrush}"
+                           HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            </Grid>
+            <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                <TextBlock x:Name="Heading" Text="Password manager PIN" Style="{StaticResource Heading}"
+                           TextWrapping="Wrap"/>
+                <TextBlock x:Name="Hint" Style="{StaticResource Muted}" TextWrapping="Wrap" Margin="0,2,0,0"/>
+            </StackPanel>
+        </Grid>
+
+        <!-- ================= PIN fields ================= -->
+        <Border Style="{StaticResource Card}" Margin="20,0,20,0" Padding="16">
+            <StackPanel>
+                <TextBlock x:Name="OldLabel" Text="Current PIN" Style="{StaticResource PinFieldLabel}"/>
+                <PasswordBox x:Name="OldBox" MaxLength="16" Margin="0,0,0,12"/>
+
+                <TextBlock x:Name="PinLabel" Text="PIN" Style="{StaticResource PinFieldLabel}"/>
+                <PasswordBox x:Name="PinBox" MaxLength="16" Margin="0,0,0,12"/>
+
+                <TextBlock x:Name="ConfirmLabel" Text="Confirm PIN" Style="{StaticResource PinFieldLabel}"/>
+                <PasswordBox x:Name="ConfirmBox" MaxLength="16"/>
+            </StackPanel>
+        </Border>
+
+        <!-- ================= Footer ================= -->
+        <Grid Margin="20,12,20,16">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Name="ErrorText" Foreground="{DynamicResource DangerBrush}" FontSize="12"
+                       TextWrapping="Wrap" VerticalAlignment="Center" Margin="0,0,12,0"/>
+            <StackPanel Grid.Column="1" Orientation="Horizontal">
+                <Button Content="Cancel" IsCancel="True" Style="{StaticResource SecondaryButton}"
+                        MinWidth="88" Margin="0,0,8,0"/>
+                <Button Content="OK" IsDefault="True" Style="{StaticResource PrimaryButton}"
+                        MinWidth="88" Click="Ok_Click"/>
+            </StackPanel>
+        </Grid>
+    </StackPanel>
+</Window>

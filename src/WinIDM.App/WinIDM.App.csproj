@@ -1,0 +1,37 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\WinIDM.Core\WinIDM.Core.csproj" />
+    <ProjectReference Include="..\WinIDM.Engine\WinIDM.Engine.csproj" />
+    <ProjectReference Include="..\WinIDM.Torrent\WinIDM.Torrent.csproj" />
+    <ProjectReference Include="..\WinIDM.Browser\WinIDM.Browser.csproj" />
+    <ProjectReference Include="..\WinIDM.Backup\WinIDM.Backup.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
+    <PackageReference Include="Microsoft.Web.WebView2" Version="1.0.4314.35" />
+    <!-- Local speech synthesis for reader mode (no online service). -->
+    <PackageReference Include="System.Speech" Version="9.0.8" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <!-- Windows 10 19041: Windows.Networking.Connectivity (metered networks) and UserConsentVerifier (Windows Hello). -->
+    <TargetFramework>net9.0-windows10.0.19041.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <UseWPF>true</UseWPF>
+    <!-- WinForms is used only for the tray icon (NotifyIcon). Global imports are removed to avoid name clashes with WPF. -->
+    <UseWindowsForms>true</UseWindowsForms>
+    <!-- ThemeMode is an official .NET 9 WPF API (marked "evaluation" in the SDK); used deliberately. -->
+    <NoWarn>$(NoWarn);WPF0001</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Using Remove="System.Windows.Forms" />
+    <Using Remove="System.Drawing" />
+  </ItemGroup>
+
+</Project>
+
