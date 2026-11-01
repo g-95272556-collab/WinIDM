@@ -14,6 +14,10 @@ public sealed record TorrentFileInfo(int Index, string Path, long Length, Torren
 public sealed record TorrentSummary(long Id, string Name, string InfoHash, DownloadState State, double Progress, bool Paused);
 
 /// <summary>Detailed statistics for a single torrent.</summary>
+/// <summary>One connected peer: address, client name, percent complete, speeds in bytes/second, seeder and encryption.</summary>
+public sealed record TorrentPeer(string Address, string Client, double Progress, long DownloadBytesPerSecond,
+    long UploadBytesPerSecond, bool Seeder, bool Encrypted);
+
 public sealed record TorrentStats(
     long Id,
     string Name,

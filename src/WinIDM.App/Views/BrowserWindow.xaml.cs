@@ -841,12 +841,23 @@ public partial class BrowserWindow : Window
             StatusText.Text = "Bookmarks are not available in incognito mode.";
             return;
         }
-        var items = _bookmarks.All.Select(b => new PickItem(b.Title, b.Url, b.Added.LocalDateTime.ToString("yyyy-MM-dd HH:mm")));
-        new ListPickerWindow("Bookmarks", "Double-click to open. Select an item and press Remove to delete it.", items,
+        var store = _bookmarks;
+        IEnumerable<PickItem> Items() => store.Ordered(_c.Settings.Bool(Keys.BookmarkFoldersFirst)).Select(b => new PickItem(
+            b.Title, b.Url,
+            (string.IsNullOrEmpty(b.Folder) ? "" : $"\U0001F4C1 {b.Folder}  |  ") + b.Added.LocalDateTime.ToString("yyyy-MM-dd HH:mm")));
+        new ListPickerWindow("Bookmarks", "Double-click to open. Select an item to move it to a folder or remove it.", Items(),
             open: url => { if (_current is not null) Navigate(_current, url); },
-            remove: url => _bookmarks.Remove(url),
+            remove: url => store.Remove(url),
             // IDM+ "Delete all bookmarks"; the list window asks before clearing.
-            clear: () => { _bookmarks.Restore([], overwrite: true); RefreshChrome(); }) { Owner = this }.Show();
+            clear: () => { store.Restore([], overwrite: true); RefreshChrome(); },
+            extra: ("Move to folder…", url =>
+            {
+                var current = store.All.FirstOrDefault(b => b.Url == url)?.Folder;
+                var folder = _shell.Prompt("Bookmark folder", "Folder name (empty = top level):", current);
+                if (folder is null) return null;
+                store.MoveToFolder(url, folder);
+                return Items();
+            })) { Owner = this }.Show();
     }
 
     private void History_Click(object sender, RoutedEventArgs e)

@@ -61,8 +61,9 @@ settings table `03a`. Statuses:
 | Use page title as media file name | Added | |
 | Automatic subtitle capture, subtitles in the videos folder | Added | `.vtt/.srt/.ass/.ssa/.ttml` by MIME or extension |
 | Saved web pages folder, page title as file name | Added | |
-| Delete all bookmarks | Added | |
-| Bookmark folders, folders first, bookmarks/bookmarklets in search suggestions | Gap | Bookmarks are a flat list |
+| Delete all bookmarks | Added | Asks for confirmation |
+| Bookmark folders, show folders first | Added | "Move to folder…" in the bookmark list; old bookmark files load unchanged |
+| Bookmarks/bookmarklets in search suggestions | Gap | The address bar has no suggestion list |
 | Tabs, incognito, popups, ad blocker, element hiding, grabber, reader + TTS, saved pages, user scripts, passwords, DNS, permissions, WebRTC leak, SSL, desktop mode | Present | |
 | Text encoding, DRM handling | Gap | WebView2 has no API for a default encoding; DRM is out of scope |
 | Bottom address bar, swipe gestures, hand mode, floating buttons, pull to refresh, landscape, PiP aspect, refresh-rate match, overlay player gestures | Android only | |
@@ -75,11 +76,21 @@ settings table `03a`. Statuses:
 | Proxy provider: Manual, Orbot (Tor), I2P | Added | Presets 127.0.0.1:9050 SOCKS5 and 127.0.0.1:4444 HTTP |
 | Disable WebRTC when using a proxy | Added | |
 | Default trackers, tracker list URL, add trackers to duplicate torrents, always contact all trackers | Added | |
-| Display peer info, folder view by default | Gap | The torrent window has no peer list or file tree |
-| Separate disk thread, verify pieces from memory, merge disk writes buffer | Gap | No matching MonoTorrent 3.0.2 setting; uTP and DHT limits are listed in `HANDOFF.md` |
+| Display peer info | Added | "Peers..." in the torrent window: address, client, progress, speeds, seeder, encryption |
+| Merge disk writes: buffer size | Added | MonoTorrent disk cache |
+| Folder view by default for file selection | Gap | The file list is flat |
+| Separate disk thread, verify pieces from memory | Android only | MonoTorrent always does disk work asynchronously and has no piece-verify size setting; uTP and DHT limits are in `HANDOFF.md` |
 
 ## Not copied on purpose
 
 Remote `set_settings` push (FCM), push notifications, `android_id`/e-mail collection, the theme marketplace, and the
-IDM+ refusal of YouTube/Facebook/Instagram downloads (see `MEDIA-CAPTURE.md`). Google Drive and MEGA as download
-sources, and the 1DM export text format (its specification was not recovered), remain gaps.
+IDM+ refusal of YouTube/Facebook/Instagram downloads (see `MEDIA-CAPTURE.md`).
+
+## Special sources
+
+| IDM+ function | Status | Notes |
+|---|---|---|
+| Google Drive file links | Added | Share links (`/file/d/ID/view`, `open?id=`, `uc?id=`) become the direct download, including large files; public files only |
+| Dropbox and OneDrive share links | Added | `dl=0` → `dl=1`, `redir` → `download` |
+| Google Drive folders (OAuth), MEGA files and folders | Gap | Need an account sign-in (Drive) or the MEGA API and its AES decryption |
+| 1DM export text format | Gap | Its line specification was not recovered from the APK |

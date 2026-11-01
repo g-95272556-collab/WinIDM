@@ -31,6 +31,7 @@ public static class TorrentSettingKeys
     public const string AddTrackersToDuplicates = "idm_pref_add_tracker_auto";
     public const string UseDefaultTrackers = "default_trackers";
     public const string TrackerListUrl = "dturl";
+    public const string WriteBufferSize = "torrent_merge_buffer_size";
 
     // Global speed-limit keys (general Downloads section). Unit: KB/s.
     public const string SpeedLimiterEnabled = "idm_pref_speed_limiter";
@@ -91,6 +92,20 @@ public sealed class TorrentConfiguration
     /// <summary>Plain-text tracker list (one URL per line) added to new torrents; empty = none.</summary>
     public string TrackerListUrl { get; private init; } = "";
 
+    /// <summary>Disk write cache in bytes (IDM+ "Merge disk writes: buffer size", default 1 MB).</summary>
+    public int WriteBufferBytes { get; private init; } = 1024 * 1024;
+
+    /// <summary>"256 KB", "1 MB", "16 MB" (or a plain byte count) to bytes; anything else gives the fallback.</summary>
+    public static int ParseSize(string? text, int fallback)
+    {
+        var t = text?.Trim().ToUpperInvariant() ?? "";
+        var multiplier = t.EndsWith("MB", StringComparison.Ordinal) ? 1024 * 1024 : t.EndsWith("KB", StringComparison.Ordinal) ? 1024 : 1;
+        var number = t.TrimEnd('B', 'K', 'M', ' ');
+        return int.TryParse(number, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var n) && n > 0
+            ? (int)Math.Min(int.MaxValue, (long)n * multiplier)
+            : fallback;
+    }
+
     /// <summary>Global download limit in bytes/second. 0 means unlimited.</summary>
     public int GlobalDownloadLimit { get; private init; }
 
@@ -139,6 +154,7 @@ public sealed class TorrentConfiguration
             AddTrackersToDuplicates = store.Get(TorrentSettingKeys.AddTrackersToDuplicates, false),
             UseDefaultTrackers = store.Get(TorrentSettingKeys.UseDefaultTrackers, false),
             TrackerListUrl = (store.Get<string?>(TorrentSettingKeys.TrackerListUrl, null) ?? "").Trim(),
+            WriteBufferBytes = ParseSize(store.Get<string?>(TorrentSettingKeys.WriteBufferSize, null), 1024 * 1024),
             GlobalDownloadLimit = speedLimiter ? KilobytesToBytesPerSecond(downKb) : 0,
             GlobalUploadLimit = KilobytesToBytesPerSecond(upKb),
         };

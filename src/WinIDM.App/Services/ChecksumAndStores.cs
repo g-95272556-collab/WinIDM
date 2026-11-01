@@ -67,7 +67,8 @@ public sealed class JsonFileStore<T>
     }
 }
 
-public sealed record Bookmark(string Title, string Url, DateTimeOffset Added);
+/// <summary>A bookmark; <paramref name="Folder"/> is the IDM+ bookmark folder (null or empty = the top level).</summary>
+public sealed record Bookmark(string Title, string Url, DateTimeOffset Added, string? Folder = null);
 
 public sealed record HistoryEntry(string Title, string Url, DateTimeOffset Visited);
 
@@ -99,6 +100,24 @@ public sealed class BookmarkStore
         _items.RemoveAll(b => string.Equals(b.Url, url, StringComparison.OrdinalIgnoreCase));
         _store.Save(_items);
     }
+
+    /// <summary>Puts a bookmark in a folder (null or blank = the top level).</summary>
+    public void MoveToFolder(string url, string? folder)
+    {
+        var name = string.IsNullOrWhiteSpace(folder) ? null : folder.Trim();
+        _items = _items.Select(b => string.Equals(b.Url, url, StringComparison.OrdinalIgnoreCase) ? b with { Folder = name } : b).ToList();
+        _store.Save(_items);
+    }
+
+    /// <summary>
+    /// Bookmarks for display: by folder (IDM+ "Show bookmark folders first" puts foldered ones before the top level),
+    /// newest first inside each group.
+    /// </summary>
+    public IReadOnlyList<Bookmark> Ordered(bool foldersFirst) =>
+        _items.OrderBy(b => foldersFirst ? (string.IsNullOrEmpty(b.Folder) ? 1 : 0) : (string.IsNullOrEmpty(b.Folder) ? 0 : 1))
+            .ThenBy(b => b.Folder ?? "", StringComparer.CurrentCultureIgnoreCase)
+            .ThenByDescending(b => b.Added)
+            .ToList();
 
     /// <summary>Backup restore: replace everything, or merge (existing URLs are kept).</summary>
     public void Restore(IEnumerable<Bookmark> incoming, bool overwrite)

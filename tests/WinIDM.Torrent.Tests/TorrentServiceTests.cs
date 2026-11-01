@@ -308,6 +308,14 @@ public class TorrentServiceTests : IDisposable
         Assert.All(TorrentService.DefaultTrackers, t => Assert.Contains(trackers, x => x.TrimEnd('/') == t.TrimEnd('/')));
     }
 
+    [Theory]
+    [InlineData("1 MB", 1024 * 1024)]
+    [InlineData("256 KB", 256 * 1024)]
+    [InlineData("16MB", 16 * 1024 * 1024)]
+    [InlineData("nonsense", 7)]
+    public void WriteBufferSize_Parses(string text, int bytes) =>
+        Assert.Equal(bytes, TorrentConfiguration.ParseSize(text, 7));
+
     [Fact]
     public async Task DisableTorrentSetting_BlocksNewTorrents()
     {

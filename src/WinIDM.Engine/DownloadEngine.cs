@@ -137,6 +137,14 @@ public sealed class DownloadEngine : IDownloadEngine, IDisposable
             throw new ArgumentException("Download URL must use the http or https scheme.", nameof(request));
         }
 
+        // Share pages (Google Drive, Dropbox, OneDrive) become their direct file link, as IDM+ special sources do.
+        // A name guessed from the share page URL ("view", "open") is dropped so the server's own name is used.
+        var original = uri;
+        uri = SpecialSources.Rewrite(uri);
+        var requestedName = request.FileName;
+        if (uri != original && string.Equals(requestedName, Path.GetFileName(original.AbsolutePath), StringComparison.OrdinalIgnoreCase))
+            requestedName = null;
+
         await EnsureInitializedAsync(ct);
 
         var now = DateTimeOffset.UtcNow;
@@ -152,7 +160,7 @@ public sealed class DownloadEngine : IDownloadEngine, IDisposable
         {
             Kind = uri.AbsolutePath.EndsWith(".m3u8", StringComparison.OrdinalIgnoreCase) ? DownloadKind.Hls : DownloadKind.Http,
             Url = uri.AbsoluteUri,
-            FileName = FileNameResolver.Sanitize(request.FileName) ?? string.Empty,
+            FileName = FileNameResolver.Sanitize(requestedName) ?? string.Empty,
             SaveDirectory = !string.IsNullOrWhiteSpace(request.SaveDirectory)
                 ? request.SaveDirectory
                 : siteDirectory ?? DefaultSaveDirectory,

@@ -131,6 +131,8 @@ public static class Keys
     public const string ProxyHost = "idm_pref_proxy_host";
     public const string ProxyPort = "idm_pref_proxy_port";
     public const string ProxyDisableWebRtc = "idm_pref_proxy_disable_webrtc";
+    public const string DisplayPeerInfo = "idm_pref_display_peerinfo";
+    public const string BookmarkFoldersFirst = "bookmark_show_folders_first";
 }
 
 /// <summary>

@@ -570,6 +570,24 @@ public sealed class TorrentService : ITorrentService, IAsyncDisposable
     }
 
     /// <summary>Current tracker URL list.</summary>
+    /// <summary>Connected peers of a torrent (IDM+ "Display peer info"). Empty while the torrent is not running.</summary>
+    public async Task<IReadOnlyList<TorrentPeer>> GetPeersAsync(long id)
+    {
+        var entry = RequireEntry(id);
+        if (entry.Manager is not { } manager) return [];
+        var peers = await manager.GetPeersAsync().ConfigureAwait(false);
+        return peers.Select(p => new TorrentPeer(
+                p.Uri.ToString(),
+                p.ClientApp.ToString(),
+                p.BitField.PercentComplete,
+                p.Monitor.DownloadRate,
+                p.Monitor.UploadRate,
+                p.IsSeeder,
+                p.EncryptionType != MonoTorrent.Connections.EncryptionType.PlainText))
+            .OrderByDescending(p => p.DownloadBytesPerSecond)
+            .ToList();
+    }
+
     public IReadOnlyList<string> GetTrackers(long id)
     {
         var entry = RequireEntry(id);
@@ -1041,6 +1059,8 @@ public sealed class TorrentService : ITorrentService, IAsyncDisposable
             MaximumConnections = _config.MaxConnections,
             MaximumDownloadRate = _globalDownloadLimit,
             MaximumUploadRate = _globalUploadLimit,
+            // IDM+ "Merge disk writes: buffer size" (torrent_merge_buffer_size).
+            DiskCacheBytes = _config.WriteBufferBytes,
             ListenEndPoints = new Dictionary<string, IPEndPoint>
             {
                 ["ipv4"] = new IPEndPoint(IPAddress.Any, port),

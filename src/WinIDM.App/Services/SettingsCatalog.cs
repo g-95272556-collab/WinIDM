@@ -167,6 +167,9 @@ public static class SettingsCatalog
         B("default_trackers", "Add the default public trackers to new torrents", false, CatTorrent, Tr, SettingStatus.EngineHook);
         T("dturl", "Tracker list URL added to new torrents (plain text, one tracker per line)", "", CatTorrent, Tr, SettingStatus.EngineHook);
         B("idm_pref_add_tracker_auto", "Automatically add trackers to duplicate torrents", false, CatTorrent, Tr, SettingStatus.EngineHook);
+        B("idm_pref_display_peerinfo", "Display peer info (Peers... in the torrent window)", false, CatTorrent, Tr);
+        C("torrent_merge_buffer_size", "Merge disk writes: buffer size", "1 MB",
+          new[] { "256 KB", "512 KB", "1 MB", "2 MB", "4 MB", "8 MB", "16 MB" }, CatTorrent, Tr, SettingStatus.EngineHook);
 
         // --- Advanced ---
         const string Ad = "System and performance";
@@ -226,6 +229,7 @@ public static class SettingsCatalog
         B("idm_pref_download_subtitles_videos_folder", "Download subtitles into the videos folder", true, CatBrowser, BU);
         T("wbpsf", "Folder for saved web pages (empty = choose each time)", "", CatBrowser, BU);
         B("uwtaffsp", "Use the page title as the file name when saving a page", true, CatBrowser, BU);
+        B("bookmark_show_folders_first", "Show bookmark folders first", false, CatBrowser, BU);
         T("browser.translate_to", "Translate pages to (language code, for example en, ms)", "en", CatBrowser, BU);
         B("browser.adblock", "Block ads and trackers", true, CatBrowser, BPr);
         B("block_webrtc_leak", "Prevent WebRTC leaks", false, CatBrowser, BPr);

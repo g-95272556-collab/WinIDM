@@ -17,8 +17,12 @@ public partial class ListPickerWindow : Window
     private readonly Action<string>? _remove;
     private readonly Action? _clear;
 
+    private readonly Func<string, IEnumerable<PickItem>?>? _extra;
+
+    /// <param name="extra">Optional action on the selected item (label, run); it returns the refreshed list, or null to keep it.</param>
     public ListPickerWindow(string title, string hint, IEnumerable<PickItem> items,
-                            Action<string> open, Action<string>? remove = null, Action? clear = null)
+                            Action<string> open, Action<string>? remove = null, Action? clear = null,
+                            (string Label, Func<string, IEnumerable<PickItem>?> Run)? extra = null)
     {
         InitializeComponent();
         Title = title;
@@ -27,8 +31,20 @@ public partial class ListPickerWindow : Window
         _open = open;
         _remove = remove;
         _clear = clear;
+        _extra = extra?.Run;
         RemoveButton.Visibility = remove is null ? Visibility.Collapsed : Visibility.Visible;
         ClearButton.Visibility = clear is null ? Visibility.Collapsed : Visibility.Visible;
+        if (extra is { } x)
+        {
+            ExtraButton.Content = x.Label;
+            ExtraButton.Visibility = Visibility.Visible;
+        }
+    }
+
+    private void Extra_Click(object sender, RoutedEventArgs e)
+    {
+        if (Selected is not { } s || _extra is null) return;
+        if (_extra(s.Url) is { } refreshed) Items.ItemsSource = refreshed.ToList();
     }
 
     private PickItem? Selected => Items.SelectedItem as PickItem;
@@ -51,6 +67,8 @@ public partial class ListPickerWindow : Window
 
     private void Clear_Click(object sender, RoutedEventArgs e)
     {
+        if (MessageBox.Show(this, $"Delete every item in {Title}? This cannot be undone.", Title,
+                MessageBoxButton.YesNo, MessageBoxImage.Warning) != MessageBoxResult.Yes) return;
         _clear?.Invoke();
         Items.ItemsSource = new List<PickItem>();
     }

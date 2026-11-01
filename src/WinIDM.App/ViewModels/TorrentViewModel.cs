@@ -307,6 +307,28 @@ public sealed partial class TorrentViewModel : ObservableObject, IDisposable
     public Task SaveTorrentCopyAsync(string destinationPath) =>
         OnTargetAsync(null, "Save .torrent", id => _c.Torrent.SaveTorrentFileAsync(id, destinationPath), ".torrent file saved.");
 
+    /// <summary>IDM+ "Display peer info" (idm_pref_display_peerinfo): shows the Peers... button.</summary>
+    public bool ShowPeerInfo => _c.Settings.Bool(Keys.DisplayPeerInfo);
+
+    /// <summary>Connected peers of the selected torrent: address, client, progress and speeds.</summary>
+    [RelayCommand]
+    private async Task ShowPeersAsync()
+    {
+        if (Selected is null) return;
+        try
+        {
+            var peers = await _c.Torrent.GetPeersAsync(Selected.Id);
+            var lines = peers.Count == 0
+                ? ["No peers are connected right now."]
+                : peers.Select(p => $"{p.Address,-42} {p.Client,-22} {p.Progress,6:0.0}%  down {Fmt.Speed(p.DownloadBytesPerSecond, false),-12} up {Fmt.Speed(p.UploadBytesPerSecond, false),-12}{(p.Seeder ? " seed" : "")}{(p.Encrypted ? " enc" : "")}");
+            _shell.ShowText($"Peers ({peers.Count})", string.Join(Environment.NewLine, lines));
+        }
+        catch (Exception ex) when (ex is KeyNotFoundException or InvalidOperationException)
+        {
+            Status = ex.Message;
+        }
+    }
+
     /// <summary>Copy the selected torrent's magnet link to the clipboard.</summary>
     [RelayCommand]
     private async Task CopyMagnetAsync()

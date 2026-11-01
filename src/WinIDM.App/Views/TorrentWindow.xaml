@@ -436,6 +436,8 @@
                                                         Command="{Binding ReannounceCommand}"/>
                                                 <Button Content="Copy magnet link" Margin="0,0,8,8"
                                                         Command="{Binding CopyMagnetCommand}"/>
+                                                <Button Content="Peers..." Margin="0,0,8,8" Command="{Binding ShowPeersCommand}"
+                                                        Visibility="{Binding ShowPeerInfo, Converter={StaticResource BoolToVis}}"/>
                                                 <Button Content="Save .torrent file..." Margin="0,0,0,8"
                                                         Click="SaveTorrent_Click"/>
                                             </WrapPanel>
