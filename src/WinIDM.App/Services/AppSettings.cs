@@ -47,6 +47,13 @@ public static class Keys
     public const string SpeedLimitEnabled = "idm_pref_speed_limiter";
     public const string SpeedLimitKbps = "idm_pref_speed_limit";
 
+    // Download list (03a: General)
+    public const string ShowMultiPart = "idm_pref_show_multi_part";
+    public const string ShowTabCounts = "sdcwtn";
+    public const string ShowFileTypeFilter = "idm_pref_show_file_types_filter";
+    public const string ShowTimeFilter = "idm_pref_show_time_filter";
+    public const string AutoOpenWebPages = "idm_pref_auto_open_webpage_browser";
+
     // Browser
     public const string BrowserJs = "cb_javascript";
     public const string BrowserBlockImages = "cb_images";

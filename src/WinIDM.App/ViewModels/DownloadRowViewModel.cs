@@ -37,6 +37,9 @@ public sealed partial class DownloadRowViewModel : ObservableObject
     [ObservableProperty] private bool _isError;
     [ObservableProperty] private bool _isTorrent;
 
+    /// <summary>Live parts for the per-segment bar; empty when hidden, not running, or a single part.</summary>
+    [ObservableProperty] private IReadOnlyList<Views.SegmentFill> _segments = [];
+
     public double BytesPerSecond => IsActive ? _bytesPerSecond : 0;
     public long TotalBytes => Item.TotalBytes;
     public DateTimeOffset CreatedAt => Item.CreatedAt;

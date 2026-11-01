@@ -33,7 +33,8 @@ public sealed partial class AddUrlViewModel : ObservableObject
         _folder = string.IsNullOrWhiteSpace(prefill.SaveDirectory) ? _c.DefaultDownloadFolder() : prefill.SaveDirectory!;
         _referer = prefill.Referer ?? "";
         _username = prefill.Username ?? "";
-        _parts = prefill.MaxSegments ?? _c.Settings.Int(Keys.Parts);
+        // The stored value is count - 1 (IDM+ convention, read the same way by the engine).
+        _parts = prefill.MaxSegments ?? Math.Clamp(_c.Settings.Int(Keys.Parts) + 1, 1, 32);
         _startImmediately = prefill.StartImmediately;
         _fileName = prefill.FileName ?? "";
         if (string.IsNullOrWhiteSpace(_fileName) && UrlHelper.IsHttp(_url))

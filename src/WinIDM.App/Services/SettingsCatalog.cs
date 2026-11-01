@@ -1,3 +1,5 @@
+using SettingDefaults = WinIDM.Engine.SettingDefaults;
+
 namespace WinIDM.App.Services;
 
 public enum SettingKind { Bool, Int, Text, Choice }
@@ -29,7 +31,8 @@ public sealed record SettingDef(
     string Group,
     SettingStatus Status = SettingStatus.Active,
     string[]? Choices = null,
-    bool Visible = true);
+    bool Visible = true,
+    int DisplayOffset = 0);
 
 public static class SettingsCatalog
 {
@@ -75,13 +78,17 @@ public static class SettingsCatalog
         B("idm_pref_smart_download_all", "Catch every valid URL, including web pages", false, CatGeneral, G);
         T("idm_pref_smart_download_exclude_extensions", "Exclude extensions (comma separated)", "", CatGeneral, G);
         B("idm_pref_wifi", "Wi-Fi only (ignore mobile data and metered networks)", false, CatGeneral, G);
-        B("idm_pref_auto_open_webpage_browser", "Open web pages in the browser automatically", false, CatGeneral, G, SettingStatus.Pending);
-        I("idm_pref_download_count", "Number of simultaneous downloads (1-9)", 3, CatGeneral, G);
-        I("idm_pref_download_part", "Number of parts per download (1-32)", 8, CatGeneral, G);
+        B("idm_pref_auto_open_webpage_browser", "Open web pages in the browser automatically", false, CatGeneral, G);
+        // Stored as IDM+ does (count - 1, which the engine reads); the page shows and accepts the real count.
+        l.Add(new SettingDef("idm_pref_download_count", "Number of simultaneous downloads (1-9)", SettingKind.Int,
+            SettingDefaults.DownloadCount, CatGeneral, G, DisplayOffset: 1));
+        l.Add(new SettingDef("idm_pref_download_part", "Number of parts per download (1-32)", SettingKind.Int,
+            SettingDefaults.DownloadPart, CatGeneral, G, DisplayOffset: 1));
         B("show_active_time_eta", "Calculate ETA from active time", true, CatGeneral, G);
         B("sdusbps", "Show speed in bits per second", false, CatGeneral, G);
         B("idm_pref_show_multi_part", "Show progress for each segment", true, CatGeneral, G);
-        B("idm_pref_disable_animations", "Turn off application animations", false, CatGeneral, G, SettingStatus.Pending);
+        B("idm_pref_show_file_types_filter", "Show the file type filter", true, CatGeneral, G);
+        B("idm_pref_show_time_filter", "Show the time filter", false, CatGeneral, G);
         B("app.minimize_to_tray", "Minimize to the system tray when the window is closed", true, CatGeneral, W);
         B("app.start_with_windows", "Start with Windows", false, CatGeneral, W);
         B("app.register_protocols", "Register the magnet:, .torrent, 1dmdownload and idmdownload protocols", false, CatGeneral, W);

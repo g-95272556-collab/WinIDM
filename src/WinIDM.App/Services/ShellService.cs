@@ -26,6 +26,10 @@ public interface IShell
     string? Prompt(string title, string label, string? initial);
     void ShowText(string title, string text);
     void ShowMessage(string title, string message, bool error = false);
+    /// <summary>Open-file dialog; null when cancelled.</summary>
+    string? PickOpenFile(string title, string filter);
+    /// <summary>Save-file dialog; null when cancelled.</summary>
+    string? PickSaveFile(string title, string filter, string defaultName);
     void Exit();
 }
 
@@ -59,6 +63,12 @@ public sealed class ShellService : IShell
     public async Task AddDownloadAsync(DownloadRequest? prefill)
     {
         var req = prefill ?? new DownloadRequest();
+        if (!string.IsNullOrWhiteSpace(req.Url) && await IsWebPageAsync(req.Url))
+        {
+            OpenBrowser(false, req.Url);
+            return;
+        }
+
         bool skip = _c.Settings.Bool(Keys.SkipEditor) && UrlHelper.IsDownloadable(req.Url);
         if (!skip)
         {
@@ -178,6 +188,39 @@ public sealed class ShellService : IShell
 
     public void ShowMessage(string title, string message, bool error = false) =>
         MessageBox.Show(Owner, message, title, MessageBoxButton.OK, error ? MessageBoxImage.Error : MessageBoxImage.Information);
+
+    public string? PickOpenFile(string title, string filter)
+    {
+        var dlg = new Microsoft.Win32.OpenFileDialog { Title = title, Filter = filter, CheckFileExists = true };
+        return dlg.ShowDialog(Owner) == true ? dlg.FileName : null;
+    }
+
+    public string? PickSaveFile(string title, string filter, string defaultName)
+    {
+        var dlg = new Microsoft.Win32.SaveFileDialog { Title = title, Filter = filter, FileName = defaultName, OverwritePrompt = true };
+        return dlg.ShowDialog(Owner) == true ? dlg.FileName : null;
+    }
+
+    /// <summary>
+    /// "Open web pages in the browser automatically" (03a: idm_pref_auto_open_webpage_browser): a link that turns out
+    /// to be an HTML page opens in the built-in browser instead of being saved as a file. Only asked when the switch is on.
+    /// </summary>
+    private async Task<bool> IsWebPageAsync(string url)
+    {
+        if (!_c.Settings.Bool(Keys.AutoOpenWebPages) || !UrlHelper.IsHttp(url)) return false;
+        try
+        {
+            using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(6));
+            using var request = new System.Net.Http.HttpRequestMessage(System.Net.Http.HttpMethod.Head, url);
+            using var response = await _c.Http.SendAsync(request, System.Net.Http.HttpCompletionOption.ResponseHeadersRead, cts.Token);
+            var type = response.Content.Headers.ContentType?.MediaType;
+            return type is "text/html" or "application/xhtml+xml" && response.Content.Headers.ContentDisposition is null;
+        }
+        catch (Exception ex) when (ex is System.Net.Http.HttpRequestException or TaskCanceledException or InvalidOperationException)
+        {
+            return false; // unknown: download as usual
+        }
+    }
 
     public void Exit() => ExitAction?.Invoke();
 }

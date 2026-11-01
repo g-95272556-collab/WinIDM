@@ -93,6 +93,36 @@ public class SettingsCatalogTests
     }
 
     /// <summary>
+    /// Parts and simultaneous downloads are stored as IDM+ stores them (count - 1, which the engine reads back + 1).
+    /// The Settings page shows and accepts the real count, so 8 parts on screen are 8 parts in the engine.
+    /// </summary>
+    [Theory]
+    [InlineData(Keys.Parts, "8", "5", 4)]
+    [InlineData(Keys.Concurrent, "3", "1", 0)]
+    public void CountSettings_ShowTheRealCount_AndStoreCountMinusOne(string key, string shownDefault, string typed, int stored)
+    {
+        var dir = Path.Combine(Path.GetTempPath(), "winidm-settings-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            var raw = new JsonSettingsStore(Path.Combine(dir, "settings.json"));
+            Assert.True(SettingsCatalog.TryGet(key, out var def));
+            var row = new WinIDM.App.ViewModels.SettingItemViewModel(def, new AppSettings(raw), (_, _) => { });
+
+            Assert.Equal(shownDefault, row.IntText);
+            row.IntText = typed;
+            Assert.Equal(stored, raw.Get(key, -99));
+
+            row.IntText = "0"; // fewer than one part or download is not a count
+            Assert.False(row.IsIntValid);
+            Assert.Equal(stored, raw.Get(key, -99));
+        }
+        finally
+        {
+            if (Directory.Exists(dir)) Directory.Delete(dir, recursive: true);
+        }
+    }
+
+    /// <summary>
     /// The Settings toggle writes the key the engine reads (not an App-only key), and a settings file from an older
     /// build that still contains <c>app.pause_on_metered</c> loads without errors (the stale key is ignored).
     /// </summary>

@@ -37,8 +37,13 @@ public sealed partial class TabItemViewModel : ObservableObject
 
     public DownloadTab Tab { get; }
     public string Title { get; }
-    [ObservableProperty] private int _count;
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(DisplayTitle))] private int _count;
     [ObservableProperty] private bool _isSelected;
+
+    /// <summary>"Show download count with tab name" (03a: sdcwtn).</summary>
+    [ObservableProperty] [NotifyPropertyChangedFor(nameof(DisplayTitle))] private bool _showCount = true;
+
+    public string DisplayTitle => ShowCount && Tab != DownloadTab.Scheduler ? $"{Title} ({Count})" : Title;
 }
 
 /// <summary>Main view model: download list, tabs, filters, row actions and bulk actions.</summary>
@@ -95,6 +100,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
         _selectedFileType = FileTypeOptions[0];
         _selectedSort = SortOptions[0];
+        _selectedTimeFilter = TimeFilterOptions[0];
+        ApplyListSettings();
         Scheduler = new SchedulerViewModel(_c.Settings);
 
         _c.Engine.ProgressChanged += OnEngineProgress;
@@ -174,6 +181,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     partial void OnSearchTextChanged(string value) => RowsView.Refresh();
     partial void OnSelectedFileTypeChanged(FileTypeOption value) => RowsView.Refresh();
     partial void OnSelectedSortChanged(SortOption value) => RowsView.Refresh();
+    partial void OnSelectedTimeFilterChanged(TimeFilterOption value) => RowsView.Refresh();
 
     private bool Filter(object o)
     {
@@ -181,6 +189,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         if (SelectedTab == DownloadTab.Scheduler) return false;
         if (!TabMatches(SelectedTab, r)) return false;
         if (SelectedFileType.Value != FileTypeFilter.All && FileTypes.Classify(r.Name) != SelectedFileType.Value) return false;
+        if (!TimeMatches(r)) return false;
         var q = SearchText?.Trim();
         if (!string.IsNullOrEmpty(q) &&
             r.Name.IndexOf(q, StringComparison.OrdinalIgnoreCase) < 0 &&
@@ -262,6 +271,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             if (row is null) continue;
             var prev = row.State;
             row.ApplyProgress(p);
+            RefreshSegments(row);
             if (row.State != prev)
             {
                 stateChanged = true;
@@ -329,6 +339,12 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
             case Keys.WifiOnly:
                 UpdateNetworkStatus();
                 break;
+            case Keys.ShowTabCounts:
+            case Keys.ShowFileTypeFilter:
+            case Keys.ShowTimeFilter:
+            case Keys.ShowMultiPart:
+                ApplyListSettings();
+                break;
             case Keys.WakeLock:
             case Keys.KeepScreenOn:
                 PowerState.Update(ActiveCount > 0, _c.Settings.Bool(Keys.WakeLock), _c.Settings.Bool(Keys.KeepScreenOn));
@@ -390,6 +406,10 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     [RelayCommand] private async Task PauseAsync(DownloadRowViewModel? row)
     {
         if (row is null) return;
+        // IDM+ warns that a server without range support cannot resume (resume_not_supported_server).
+        if (row.IsActive && row.Item.Kind == DownloadKind.Http && !row.Item.AcceptsRanges && row.Item.DownloadedBytes > 0 &&
+            !_shell.Confirm("Pause", "This server does not support resume. If you pause, the download starts again from zero. Pause anyway?"))
+            return;
         await SafeAsync("Pause", () => _c.Engine.PauseAsync(row.Id));
     }
 

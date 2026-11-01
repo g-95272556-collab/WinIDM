@@ -2,6 +2,7 @@
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:vm="clr-namespace:WinIDM.App.ViewModels"
+        xmlns:v="clr-namespace:WinIDM.App.Views"
         Title="WinIDM"
         Width="1280" Height="820" MinWidth="1180" MinHeight="620"
         WindowStartupLocation="CenterScreen"
@@ -215,9 +216,7 @@
                                       IsChecked="{Binding IsSelected, Mode=OneWay}"
                                       Command="{Binding DataContext.SelectTabCommand, RelativeSource={RelativeSource AncestorType=ItemsControl}}"
                                       CommandParameter="{Binding}">
-                            <TextBlock>
-                                <Run Text="{Binding Title, Mode=OneWay}"/><Run Text=" ("/><Run Text="{Binding Count, Mode=OneWay}"/><Run Text=")"/>
-                            </TextBlock>
+                            <TextBlock Text="{Binding DisplayTitle, Mode=OneWay}"/>
                         </ToggleButton>
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
@@ -228,18 +227,37 @@
                 <StackPanel DockPanel.Dock="Right" Orientation="Horizontal"
                             Visibility="{Binding IsSchedulerTab, Converter={StaticResource InvBoolToVis}}">
                     <Button Content="Remove selected" Command="{Binding RemoveSelectedCommand}" Margin="0,0,8,0"/>
-                    <Button Content="Remove completed" Command="{Binding RemoveFinishedCommand}"/>
+                    <Button Content="Remove completed" Command="{Binding RemoveFinishedCommand}" Margin="0,0,8,0"/>
+                    <Menu VerticalAlignment="Center" Background="Transparent">
+                        <MenuItem Header="Tools ▾" AutomationProperties.Name="Download tools">
+                            <MenuItem Header="Batch download…" Command="{Binding BatchDownloadCommand}"/>
+                            <MenuItem Header="Import links…" Command="{Binding ImportLinksCommand}"/>
+                            <MenuItem Header="Export links…" Command="{Binding ExportLinksCommand}"/>
+                            <Separator/>
+                            <MenuItem Header="Remove leftover part files…" Command="{Binding RemoveLeftoverFilesCommand}"/>
+                        </MenuItem>
+                    </Menu>
                 </StackPanel>
                 <StackPanel Orientation="Horizontal">
-                    <ComboBox Width="152" ItemsSource="{Binding FileTypeOptions}" SelectedItem="{Binding SelectedFileType}"
-                              ToolTip="File type filter">
+                    <ComboBox Width="152" ItemsSource="{Binding TimeFilterOptions}" SelectedItem="{Binding SelectedTimeFilter}"
+                              ToolTip="Time filter" Margin="0,0,8,0"
+                              Visibility="{Binding ShowTimeFilter, Converter={StaticResource BoolToVis}}">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
                                 <TextBlock Text="{Binding Label}"/>
                             </DataTemplate>
                         </ComboBox.ItemTemplate>
                     </ComboBox>
-                    <ComboBox Width="176" Margin="8,0,0,0" ItemsSource="{Binding SortOptions}" SelectedItem="{Binding SelectedSort}"
+                    <ComboBox Width="152" ItemsSource="{Binding FileTypeOptions}" SelectedItem="{Binding SelectedFileType}"
+                              ToolTip="File type filter" Margin="0,0,8,0"
+                              Visibility="{Binding ShowFileTypeFilter, Converter={StaticResource BoolToVis}}">
+                        <ComboBox.ItemTemplate>
+                            <DataTemplate>
+                                <TextBlock Text="{Binding Label}"/>
+                            </DataTemplate>
+                        </ComboBox.ItemTemplate>
+                    </ComboBox>
+                    <ComboBox Width="176" ItemsSource="{Binding SortOptions}" SelectedItem="{Binding SelectedSort}"
                               ToolTip="Sort order">
                         <ComboBox.ItemTemplate>
                             <DataTemplate>
@@ -324,10 +342,20 @@
                                                         <ColumnDefinition Width="*"/>
                                                         <ColumnDefinition Width="Auto"/>
                                                     </Grid.ColumnDefinitions>
+                                                    <Grid.RowDefinitions>
+                                                        <RowDefinition Height="Auto"/>
+                                                        <RowDefinition Height="Auto"/>
+                                                    </Grid.RowDefinitions>
                                                     <ProgressBar Grid.Column="0" Value="{Binding Progress, Mode=OneWay}" Maximum="100"
                                                                  IsIndeterminate="{Binding IsIndeterminate}" Style="{StaticResource RowBar}"/>
                                                     <TextBlock Grid.Column="1" Text="{Binding ProgressText}" FontSize="11"
                                                                Margin="8,0,0,0" Foreground="{DynamicResource TextSecondaryBrush}"/>
+                                                    <!-- Each part in its place in the file (idm_pref_show_multi_part). -->
+                                                    <v:SegmentBar Grid.Row="1" Grid.Column="0" Height="3" Margin="0,3,0,0"
+                                                                  Segments="{Binding Segments}"
+                                                                  TrackBrush="{DynamicResource SurfaceAltBrush}"
+                                                                  FillBrush="{DynamicResource AccentBrush}"
+                                                                  AutomationProperties.Name="Segment progress"/>
                                                 </Grid>
                                             </DataTemplate>
                                         </GridViewColumn.CellTemplate>

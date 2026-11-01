@@ -27,8 +27,9 @@ public sealed class SettingsTests
                     var edit = FindEditForLabel(settings, PartsLabel);
                     Assert.Equal("8", Uia.Value(edit));
 
+                    // The page shows the real count; settings.json keeps the IDM+ value (count - 1) that the engine reads.
                     Uia.SetText(edit, "5");
-                    Uia.WaitUntil(() => ReadSetting(data, PartsKey) == "5", "setting saved to settings.json", TimeSpan.FromSeconds(10));
+                    Uia.WaitUntil(() => ReadSetting(data, PartsKey) == "4", "setting saved to settings.json", TimeSpan.FromSeconds(10));
 
                     AppFlows.CloseDialog(settings);
                     Uia.WaitWindowGone(app.Pid, "Settings");
@@ -43,7 +44,7 @@ public sealed class SettingsTests
             using var restarted = AppSession.Launch(data);
             Shots.RunScenario(restarted, "S05-settings-persist-after-restart", () =>
             {
-                Assert.Equal("5", ReadSetting(data, PartsKey));
+                Assert.Equal("4", ReadSetting(data, PartsKey));
 
                 Uia.Invoke(Uia.Find(restarted.Main, ControlType.Button, "Settings"));
                 var settings = Uia.WaitWindow(restarted.Pid, "Settings");

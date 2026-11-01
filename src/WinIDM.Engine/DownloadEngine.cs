@@ -441,9 +441,20 @@ public sealed class DownloadEngine : IDownloadEngine, IDisposable
     }
 
     /// <summary>
-    /// Removes old download records (links) without deleting files. If <see cref="SettingKeys.DeleteLinksAfterDays"/> is -1,
-    /// nothing is removed. With <see cref="SettingKeys.DeleteLinksOnlyFinished"/> = true, only completed downloads are removed.
-    /// Called periodically (once an hour) and can be called directly.
+    /// Live parts of a running download, for "Show progress for each segment" (03a: idm_pref_show_multi_part).
+    /// Empty when the download is not running.
+    /// </summary>
+    public IReadOnlyList<SegmentInfo> GetLiveSegments(long id)
+    {
+        DownloadJob? job;
+        lock (_gate) _jobs.TryGetValue(id, out job);
+        return job?.SegmentsSnapshot() ?? [];
+    }
+
+    /// <summary>
+    /// Removes old download records (links) without deleting files. If <see cref="SettingKeys.DeleteLinksAfterDays"/> is
+    /// 0 or -1, nothing is removed. With <see cref="SettingKeys.DeleteLinksOnlyFinished"/> = true, only completed downloads
+    /// are removed. Called periodically (once an hour) and can be called directly.
     /// </summary>
     /// <returns>Number of records removed.</returns>
     public async Task<int> RemoveOldLinksAsync(DateTimeOffset? now = null, CancellationToken ct = default)

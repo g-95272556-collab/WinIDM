@@ -146,6 +146,12 @@ internal sealed class DownloadJob : IDisposable
         }
     }
 
+    /// <summary>Copy of the live segment plan (for the per-part progress display).</summary>
+    public SegmentInfo[] SegmentsSnapshot()
+    {
+        lock (_gate) return _segments.Select(CloneSegment).ToArray();
+    }
+
     /// <summary>Runs the download until it completes, fails or is stopped. Never throws.</summary>
     public async Task RunAsync()
     {

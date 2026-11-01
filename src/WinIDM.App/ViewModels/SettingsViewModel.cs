@@ -112,7 +112,7 @@ public sealed partial class SettingItemViewModel : ObservableObject
         switch (def.Kind)
         {
             case SettingKind.Bool: _boolValue = settings.Bool(def.Key); break;
-            case SettingKind.Int: _intText = settings.Int(def.Key).ToString(); break;
+            case SettingKind.Int: _intText = (settings.Int(def.Key) + def.DisplayOffset).ToString(); break;
             case SettingKind.Text: _textValue = settings.Text(def.Key); break;
             case SettingKind.Choice: _choiceValue = settings.Text(def.Key); break;
         }
@@ -147,10 +147,11 @@ public sealed partial class SettingItemViewModel : ObservableObject
     partial void OnIntTextChanged(string value)
     {
         if (Kind != SettingKind.Int) return;
-        if (int.TryParse(value, out int n) && n >= 0)
+        // A shown count (DisplayOffset 1) must be at least 1; it is stored as count - 1, as IDM+ does.
+        if (int.TryParse(value, out int n) && n >= Def.DisplayOffset)
         {
             IsIntValid = true;
-            Save(n);
+            Save(n - Def.DisplayOffset);
         }
         else
         {
