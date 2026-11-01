@@ -30,6 +30,7 @@ The engine does **not** perform system actions (shut down, sleep, etc.). The App
 | 183 | Too many redirects (limit 8) |
 | 184 | Unsupported playlist or segment (EXT-X-MAP with SAMPLE-AES, SAMPLE-AES segment that is not MPEG-TS, missing PAT/PMT, encryption other than AES-128 and SAMPLE-AES) |
 | 185 | Invalid URL |
+| 186 | The server does not support ranges and the transfer was interrupted. Retried from zero only with `idm_pref_auto_restart_non_resumable_links` |
 | 416, 429, 509 | HTTP: range not satisfiable, too many requests, bandwidth limit. Not retried at the segment level |
 | Other | The actual HTTP status code (for example 404, 503) |
 
@@ -40,6 +41,16 @@ The engine does **not** perform system actions (shut down, sleep, etc.). The App
 - Proxy: `idm_pref_proxy_type` 0 = HTTP (HTTPS targets through CONNECT), 1 = SOCKS5 (with RFC 1929 auth), 2 = HTTPS (TLS to the proxy, see the Proxy section). Auth via `idm_pref_proxy_user` and `idm_pref_proxy_pass`.
 - Secret keys (`IsSecret`: `*_pass`, `*_password`, `*_token`, `*_secret`) are encrypted with DPAPI (user scope) on disk only.
 - Extra WinIDM keys: `winidm_default_save_directory`, `winidm_move_files_by_category`, `winidm_move_rules`, `winidm_after_downloads_action`, `winidm_hls_record_live_until_stopped`, plus the network policy keys below.
+
+## Segments and the advanced method
+
+- Parts = min(n, ceil(size / 2 MiB)), n = `idm_pref_download_part` + 1 (max 32), lowered by a per-domain part limit.
+- `idm_pref_advance_download_method` (default on): a file of 32 MiB or more without a domain limit gets twice the parts
+  (max 64), but **not** more connections. Only the original n parts run at once; the extra parts wait in the job and
+  start as earlier parts finish (`SegmentPlanner.WorkerCount`), as IDM+ describes it.
+- `idm_pref_auto_restart_non_resumable_links` (default off): when the server has no range support and the transfer
+  breaks after some bytes, the download stops with 186. On: it starts again from zero.
+- `idm_pref_delete_links_after_days`: 0 or -1 means off.
 
 ## Network policy (`INetworkPolicy`)
 
@@ -53,6 +64,7 @@ The Windows interpretation of the settings:
 |---|---|---|
 | Wi-Fi only | `idm_pref_wifi` | Download only if `IsWifiOrEthernet`. Ethernet counts as equivalent to Wi-Fi (not mobile data). 03a: "Ignore mobile internet" |
 | Pause on metered data | `winidm_pause_on_metered` (default false) | If `IsMetered`, running downloads are stopped and go back to the queue |
+| Battery limit | `idm_pref_battery_limit` (%, 0 = off) | On battery below the limit, downloads go back to the queue; they restart when the charge rises or the charger is plugged in. The App supplies `DownloadEngine.PowerStatus` (`GetSystemPowerStatus`); a PC without a battery is never blocked |
 | Mobile data limit | `winidm_metered_daily_limit_mb`, `winidm_metered_monthly_limit_mb` (MiB, 0 = none) | Bytes transferred while `IsMetered` are counted. Limit reached: downloads are stopped and not restarted until a new day/month |
 
 - Downloads stopped by policy go back to **Queued** and restart automatically once allowed (unlike Paused, which the user starts). A user pause stays Paused.

@@ -116,6 +116,12 @@ public sealed class DownloadEngine : IDownloadEngine, IDisposable
         set => _hostResolver = value;
     }
 
+    /// <summary>
+    /// Power source reader for the battery limit (<see cref="SettingKeys.BatteryLimit"/>). The App supplies the Windows
+    /// reading; null (default) or a null result means "no battery information", so the limit never blocks.
+    /// </summary>
+    public Func<PowerReading?>? PowerStatus { get; set; }
+
     /// <summary>Last background error (for example a repository error while pumping the queue). Null if none.</summary>
     public Exception? LastBackgroundException { get; private set; }
 
@@ -444,8 +450,9 @@ public sealed class DownloadEngine : IDownloadEngine, IDisposable
     {
         await EnsureInitializedAsync(ct);
 
+        // 0 also means off: the Settings page cannot enter -1, and "after 0 days" would wipe every finished record.
         var days = _settings.Get(SettingKeys.DeleteLinksAfterDays, SettingDefaults.DeleteLinksAfterDays);
-        if (days < 0) return 0;
+        if (days <= 0) return 0;
 
         var onlyFinished = _settings.Get(SettingKeys.DeleteLinksOnlyFinished, SettingDefaults.DeleteLinksOnlyFinished);
         var cutoff = (now ?? DateTimeOffset.UtcNow).AddDays(-days);
@@ -527,6 +534,9 @@ public sealed class DownloadEngine : IDownloadEngine, IDisposable
 
     internal bool AdvancedMethod =>
         _settings.Get(SettingKeys.AdvanceDownloadMethod, SettingDefaults.AdvanceDownloadMethod);
+
+    internal bool AutoRestartNonResumable =>
+        _settings.Get(SettingKeys.AutoRestartNonResumable, SettingDefaults.AutoRestartNonResumable);
 
     internal bool CreateEmptyFile =>
         _settings.Get(SettingKeys.CreateEmptyFile, SettingDefaults.CreateEmptyFile);
@@ -663,6 +673,10 @@ public sealed class DownloadEngine : IDownloadEngine, IDisposable
     private StopReason? BlockingReason(DateTimeOffset now)
     {
         if (!_network.IsOnline) return StopReason.Offline;
+
+        var batteryLimit = _settings.Get(SettingKeys.BatteryLimit, SettingDefaults.BatteryLimit);
+        if (batteryLimit > 0 && PowerStatus?.Invoke() is { OnBattery: true } power && power.Percent < batteryLimit)
+            return StopReason.LowBattery;
 
         var wifiOnly = _settings.Get(SettingKeys.WifiOnly, SettingDefaults.WifiOnly);
         if (wifiOnly && !(WifiAvailability?.Invoke() ?? _network.IsWifiOrEthernet)) return StopReason.WifiLost;

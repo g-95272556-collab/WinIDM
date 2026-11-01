@@ -74,7 +74,10 @@ public sealed class Composition
         // DNS resolver (system / DoH / DoT) for download connections. Re-read from settings.
         var dnsResolver = new DnsHostResolver(raw);
         var network = new NetworkPolicyAdapter();
-        var engineImpl = new DownloadEngine(repo, raw, hostResolver: dnsResolver.ResolveAsync, network: network);
+        var engineImpl = new DownloadEngine(repo, raw, hostResolver: dnsResolver.ResolveAsync, network: network)
+        {
+            PowerStatus = PowerState.ReadBattery,
+        };
         IDownloadEngine engine = engineImpl;
         var torrent = new TorrentService(raw, dataDir);
 

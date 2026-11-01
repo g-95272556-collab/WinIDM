@@ -34,6 +34,12 @@ public static class EngineErrorCodes
 
     /// <summary>WinIDM code: invalid download address.</summary>
     public const int InvalidUrl = 185;
+
+    /// <summary>
+    /// WinIDM code: the server does not support ranges and the transfer was interrupted, so it cannot continue.
+    /// Retried from zero only when <see cref="SettingKeys.AutoRestartNonResumable"/> is on (IDM+ behaviour).
+    /// </summary>
+    public const int NotResumable = 186;
 }
 
 /// <summary>Transfer error with a code and a flag for whether it can be retried.</summary>

@@ -130,6 +130,39 @@ public static class PowerState
         catch (DllNotFoundException) { }
         catch (EntryPointNotFoundException) { }
     }
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct SystemPowerStatus
+    {
+        public byte ACLineStatus;
+        public byte BatteryFlag;
+        public byte BatteryLifePercent;
+        public byte SystemStatusFlag;
+        public int BatteryLifeTime;
+        public int BatteryFullLifeTime;
+    }
+
+    [DllImport("kernel32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool GetSystemPowerStatus(out SystemPowerStatus status);
+
+    /// <summary>
+    /// Battery state for the engine's battery limit. Null when Windows reports no battery (desktop PC) or the charge
+    /// is unknown, so the limit never blocks a machine without a battery.
+    /// </summary>
+    public static WinIDM.Engine.PowerReading? ReadBattery()
+    {
+        const byte NoBattery = 128, UnknownStatus = 255, Offline = 0;
+        try
+        {
+            if (!GetSystemPowerStatus(out var s)) return null;
+            if (s.BatteryFlag == UnknownStatus || (s.BatteryFlag & NoBattery) != 0 || s.BatteryLifePercent > 100) return null;
+            // ACLineStatus: 0 = on battery, 1 = plugged in, 255 = unknown (treated as plugged in).
+            return new WinIDM.Engine.PowerReading(OnBattery: s.ACLineStatus == Offline, s.BatteryLifePercent);
+        }
+        catch (DllNotFoundException) { return null; }
+        catch (EntryPointNotFoundException) { return null; }
+    }
 }
 
 /// <summary>

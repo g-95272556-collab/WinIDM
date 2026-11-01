@@ -47,6 +47,14 @@ public static class SegmentPlanner
     }
 
     /// <summary>
+    /// Connections that run at the same time. The advanced method only adds parts, not connections: the extra
+    /// parts wait in the job's queue and start as earlier parts finish (IDM+ "Use advance download method"), so
+    /// a connection that finishes early picks up more work instead of idling while a slow part drags on.
+    /// </summary>
+    public static int WorkerCount(long length, int requestedSegments, int domainPartLimit) =>
+        CountSegments(length, requestedSegments, domainPartLimit, advanced: false);
+
+    /// <summary>
     /// Splits <paramref name="length"/> into segments of nearly equal size. Ranges are inclusive.
     /// Remaining bytes are distributed to the first segments, so the total equals the file size exactly.
     /// </summary>

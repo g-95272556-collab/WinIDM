@@ -45,6 +45,11 @@ public sealed class DefaultNetworkPolicy : INetworkPolicy
 }
 
 /// <summary>
+/// Power source state for the battery limit: on battery (not charging) and the remaining charge in percent (0-100).
+/// </summary>
+public sealed record PowerReading(bool OnBattery, int Percent);
+
+/// <summary>
 /// Download byte counts on metered networks, for the daily and monthly limits. Counts are stored in
 /// <see cref="ISettingsStore"/> so they persist across restarts. Writes are batched and saved during <see cref="Flush"/>
 /// (called every tick), because <see cref="JsonSettingsStore.Set{T}"/> writes the file every time.

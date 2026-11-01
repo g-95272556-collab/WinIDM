@@ -97,7 +97,7 @@ public static class SettingsCatalog
         B("idm_pref_move_files_download_finish", "Move files after a download finishes", false, CatAutomation, Sel);
         T("idm_pref_move_files_download_finish_path", "Move destination folder", "", CatAutomation, Sel);
         B("winidm_move_files_by_category", "Move by category (subfolder)", false, CatAutomation, Sel);
-        I("idm_pref_delete_links_after_days", "Remove old links after (n) days (0 = never)", 0, CatAutomation, Sel, SettingStatus.Pending);
+        I("idm_pref_delete_links_after_days", "Remove old links after (n) days (0 = never)", 0, CatAutomation, Sel, SettingStatus.EngineHook);
 
         // --- Notifications ---
         const string Nt = "Tray notifications";
@@ -159,8 +159,9 @@ public static class SettingsCatalog
         B("idm_pref_speed_limiter_cascade", "Apply the speed limit to all downloads", false, CatAdvanced, Ad, SettingStatus.EngineHook);
         I("idm_pref_speed_limit", "Speed limit (KB/s)", 10240, CatAdvanced, Ad, SettingStatus.EngineHook);
         B("sdcwtn", "Show the download count in the tab name", true, CatAdvanced, Ad);
-        I("idm_pref_battery_limit", "Stop downloads when the battery drops below (%) (0 = never)", 0, CatAdvanced, Ad, SettingStatus.Pending);
-        B("idm_convert_ts_files_ffmpeg", "Convert .ts files to MP4 (requires FFmpeg)", true, CatAdvanced, Ad, SettingStatus.Pending);
+        I("idm_pref_battery_limit", "Stop downloads when the battery drops below (%) (0 = never)", 0, CatAdvanced, Ad, SettingStatus.EngineHook);
+        B("idm_convert_ts_files_ffmpeg", "Convert .ts files to MP4 (requires FFmpeg)", true, CatAdvanced, Ad, SettingStatus.EngineHook);
+        B("idm_pref_advance_download_method", "Use the advanced download method (large files get extra parts that start as other parts finish; may use a little more data)", true, CatAdvanced, Ad, SettingStatus.EngineHook);
         B("download_diagnostics", "Download diagnostics (logs without URLs or file names)", false, CatAdvanced, Ad);
         B("app.capture_log", "Capture the application log (off by default; errors are always logged)", false, CatAdvanced, Ad);
         T("app.update_url", "Custom update check URL (https; empty = off)", "", CatAdvanced, Ad);

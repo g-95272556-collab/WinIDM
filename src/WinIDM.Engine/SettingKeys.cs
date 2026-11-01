@@ -45,6 +45,15 @@ public static class SettingKeys
 
     public const string ConvertTsToMp4 = "idm_convert_ts_files_ffmpeg";
 
+    /// <summary>
+    /// A download whose server does not support ranges is restarted from zero after an error (03a). Off: an
+    /// interrupted non-resumable download stops with <see cref="EngineErrorCodes.NotResumable"/>.
+    /// </summary>
+    public const string AutoRestartNonResumable = "idm_pref_auto_restart_non_resumable_links";
+
+    /// <summary>Stop downloads while on battery below this percentage; 0 = never (03a: idm_pref_battery_limit).</summary>
+    public const string BatteryLimit = "idm_pref_battery_limit";
+
     /// <summary>Default download folder. WinIDM key (not in 03a); the default is %USERPROFILE%\Downloads.</summary>
     public const string DefaultSaveDirectory = "winidm_default_save_directory";
 
@@ -66,7 +75,7 @@ public static class SettingKeys
     /// <summary>Remove the download link (record) after completion; the file is not deleted (03a: idm_pref_remove_link_download_finish).</summary>
     public const string RemoveLinkOnFinish = "idm_pref_remove_link_download_finish";
 
-    /// <summary>Remove old links after N days; -1 means off (03a: idm_pref_delete_links_after_days).</summary>
+    /// <summary>Remove old links after N days; 0 or -1 means off (03a: idm_pref_delete_links_after_days).</summary>
     public const string DeleteLinksAfterDays = "idm_pref_delete_links_after_days";
 
     /// <summary>If true, only completed downloads are removed after N days (03a: idm_pref_delete_links_after_days_only_finished).</summary>
@@ -189,6 +198,8 @@ public static class SettingDefaults
     public const string ProxyUser = "";
     public const string ProxyPass = "";
     public const bool ConvertTsToMp4 = true;
+    public const bool AutoRestartNonResumable = false;
+    public const int BatteryLimit = 0;
     public const string DefaultSaveDirectory = "";
 
     public const bool MoveFilesOnFinish = false;

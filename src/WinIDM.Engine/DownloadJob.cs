@@ -27,6 +27,9 @@ internal enum StopReason
 
     /// <summary>Metered connection and the daily/monthly data limit has been reached.</summary>
     QuotaExceeded,
+
+    /// <summary>Running on battery below the battery limit (<see cref="SettingKeys.BatteryLimit"/>).</summary>
+    LowBattery,
 }
 
 /// <summary>
@@ -56,6 +59,7 @@ internal sealed class DownloadJob : IDisposable
     private HttpClient? _client;
     private SafeFileHandle? _file;
     private bool _rangeMode;
+    private int _workerLimit = 1;
     private long _lastCheckpointTicks;
     private long _sampleBytes;
     private long _sampleTimestamp;
@@ -463,6 +467,11 @@ internal sealed class DownloadJob : IDisposable
 
     private async Task LoadOrPlanSegmentsAsync(bool fresh, long total)
     {
+        var domainLimit = _rangeMode && _engine.Rules is { } rules
+            ? await rules.GetDomainPartLimitAsync(HostOf(_item) ?? string.Empty, _cts.Token)
+            : 0;
+        _workerLimit = _rangeMode ? SegmentPlanner.WorkerCount(total, _item.MaxSegments, domainLimit) : 1;
+
         if (!fresh)
         {
             var saved = await _engine.Repository.LoadSegmentsAsync(_item.Id);
@@ -481,9 +490,6 @@ internal sealed class DownloadJob : IDisposable
         List<SegmentInfo> planned;
         if (_rangeMode)
         {
-            var domainLimit = _engine.Rules is { } rules
-                ? await rules.GetDomainPartLimitAsync(HostOf(_item) ?? string.Empty, _cts.Token)
-                : 0;
             planned = SegmentPlanner.Plan(total, _item.MaxSegments, domainLimit, _engine.AdvancedMethod, _item.Id);
         }
         else
@@ -566,12 +572,23 @@ internal sealed class DownloadJob : IDisposable
 
     private async Task RunSegmentsAsync()
     {
-        var pending = _segments.Where(s => !IsDone(s)).ToArray();
+        var pending = _segments.Where(s => !IsDone(s)).OrderBy(s => s.Index).ToArray();
         if (pending.Length == 0) return;
 
-        var tasks = pending
-            .Select(s => _rangeMode ? RunRangeSegmentAsync(s) : RunSingleSegmentAsync(s))
-            .ToArray();
+        // At most _workerLimit connections; the advanced method's extra parts queue here in index order.
+        using var slots = new SemaphoreSlim(Math.Max(1, _workerLimit));
+        var tasks = pending.Select(async s =>
+        {
+            await slots.WaitAsync(_cts.Token);
+            try
+            {
+                await (_rangeMode ? RunRangeSegmentAsync(s) : RunSingleSegmentAsync(s));
+            }
+            finally
+            {
+                slots.Release();
+            }
+        }).ToArray();
 
         try
         {
@@ -707,6 +724,15 @@ internal sealed class DownloadJob : IDisposable
             }
             catch (TransferException ex) when (ex.Retryable && ex.Code != EngineErrorCodes.TooManyRequests)
             {
+                // Without ranges the received bytes cannot be kept. IDM+ only starts such a link again from zero
+                // when "Auto restart non resumable links" is on; otherwise the download stops with an error.
+                if (DownloadedOf(seg) > 0 && !_engine.AutoRestartNonResumable)
+                {
+                    throw new TransferException(EngineErrorCodes.NotResumable,
+                        "The server does not support resume and the transfer was interrupted. Restart the download, " +
+                        "or turn on \"Restart from zero if a link cannot be resumed\".", retryable: false, inner: ex);
+                }
+
                 failures++;
                 if (failures > SegmentRetries) throw;
                 await Task.Delay(_engine.SegmentRetryDelay * failures, _cts.Token);
@@ -1050,7 +1076,8 @@ internal sealed class DownloadJob : IDisposable
     }
 
     private static bool IsNetworkPolicyStop(StopReason reason) =>
-        reason is StopReason.WifiLost or StopReason.Offline or StopReason.Metered or StopReason.QuotaExceeded;
+        reason is StopReason.WifiLost or StopReason.Offline or StopReason.Metered or StopReason.QuotaExceeded
+            or StopReason.LowBattery;
 
     private async Task PersistItemAsync()
     {
