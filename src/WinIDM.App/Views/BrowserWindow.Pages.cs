@@ -28,6 +28,16 @@ public partial class BrowserWindow
         if (_c.Settings.Bool(Keys.SaveData)) headers.SetHeader("Save-Data", "on");
         if (_c.Settings.Bool(Keys.GlobalPrivacyControl)) headers.SetHeader("Sec-GPC", "1");
 
+        // Cross-site referrer cap. Media, XHR and fetch are left alone: players fetch HLS/DASH playlists and
+        // segments that way, and some media CDNs check the full Referer before they serve anything.
+        if (_c.Settings.Bool(Keys.CapReferrer) && ShieldsActive(tab.View?.Source?.ToString())
+            && e.ResourceContext is not (CoreWebView2WebResourceContext.Media or CoreWebView2WebResourceContext.XmlHttpRequest
+                or CoreWebView2WebResourceContext.Fetch)
+            && ReferrerCap.Cap(BrowserWindow.HeaderOrEmpty(headers, "Referer"), e.Request.Uri) is { } capped)
+        {
+            headers.SetHeader("Referer", capped);
+        }
+
         // Navigation documents are not cookie-blocked (that would break sign-in). Blocking applies to subresources only.
         if (_c.Settings.Bool(Keys.BlockThirdPartyCookies)
             && e.ResourceContext != CoreWebView2WebResourceContext.Document
