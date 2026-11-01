@@ -36,5 +36,13 @@ public sealed partial class BrowserTabViewModel : ObservableObject
     /// <summary>Last top-level navigation URL (used to detect iframe frames).</summary>
     public string TopNavigationUrl { get; set; } = "";
 
+    /// <summary>Shields counters for the current page (reset when a new page starts loading).</summary>
+    public int ShieldsBlocked { get; set; }
+    public int ShieldsParamsRemoved { get; set; }
+    public bool ShieldsUpgraded { get; set; }
+
+    /// <summary>The navigation the shields started in place of the page's own; it keeps the counters above.</summary>
+    public string? ShieldsRewriteTarget { get; set; }
+
     public WebView2? View { get; set; }
 }

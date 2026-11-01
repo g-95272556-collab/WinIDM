@@ -16,6 +16,7 @@ public static class Keys
     public const string HttpsUpgrade = "browser.https_upgrade";
     public const string CapReferrer = "browser.cap_referrer";
     public const string FingerprintProtection = "browser.fingerprint_protection";
+    public const string ShieldsOffSites = "browser.shields_off_sites";
     public const string BlockThirdPartyCookies = "third_party";
     public const string SkipEditor = "idm_pref_skip_editor";
     public const string AutoStart = "skip_editor_auto_start";

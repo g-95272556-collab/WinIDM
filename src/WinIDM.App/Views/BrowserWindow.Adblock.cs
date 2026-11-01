@@ -22,7 +22,7 @@ public partial class BrowserWindow
     {
         if (!_c.Settings.Bool(Keys.AdBlock)) return false;
         var host = tab.View?.Source?.Host;
-        return string.IsNullOrEmpty(host) || !BrowserSvc.Rules.IsSiteAdblockOff(host);
+        return string.IsNullOrEmpty(host) || (!BrowserSvc.Rules.IsSiteAdblockOff(host) && !IsShieldsOff(host));
     }
 
     /// <summary>
@@ -49,6 +49,8 @@ public partial class BrowserWindow
         bool blocked = svc.Hosts.TryBlock(url, pageUrl) || svc.Engine.ShouldBlock(url, pageUrl, type);
         if (!blocked) return false;
         e.Response = core.Environment.CreateWebResourceResponse(null, 403, "Blocked", "");
+        tab.ShieldsBlocked++;
+        if (_current == tab) RefreshShieldsButton(tab);
         return true;
     }
 
@@ -60,7 +62,7 @@ public partial class BrowserWindow
     {
         if (!_c.Settings.Bool(Keys.AdBlock) || !UrlHelper.IsHttp(url)) return null;
         if (!Uri.TryCreate(url, UriKind.Absolute, out var u)) return null;
-        if (BrowserSvc.Rules.IsSiteAdblockOff(u.Host)) return null;
+        if (BrowserSvc.Rules.IsSiteAdblockOff(u.Host) || IsShieldsOff(u.Host)) return null;
         var css = BrowserCosmetics.BuildStyleSheet(
             BrowserSvc.Engine.BuildCosmeticStyleSheet(u.Host),
             BrowserSvc.Rules.ManualSelectors(u.Host));

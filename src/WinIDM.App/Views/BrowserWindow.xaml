@@ -114,6 +114,21 @@
                     </ContextMenu>
                 </Button.ContextMenu>
             </Button>
+            <Button DockPanel.Dock="Right" x:Name="ShieldsButton" Content="Shields" ToolTip="Privacy shields for this site"
+                    Padding="8,2" Margin="6,0,0,0" Click="Menu_Click">
+                <Button.ContextMenu>
+                    <ContextMenu x:Name="ShieldsMenu" Opened="ShieldsMenu_Opened">
+                        <MenuItem x:Name="ShieldsSiteItem" Header="Shields for this site" IsCheckable="True" Click="ShieldsSite_Click"/>
+                        <Separator/>
+                        <MenuItem x:Name="ShieldsBlockedItem" IsEnabled="False"/>
+                        <MenuItem x:Name="ShieldsParamsItem" IsEnabled="False"/>
+                        <MenuItem x:Name="ShieldsHttpsItem" IsEnabled="False"/>
+                        <MenuItem x:Name="ShieldsFingerprintItem" IsEnabled="False"/>
+                        <Separator/>
+                        <MenuItem Header="Ad blocker and filters…" Click="OpenBlocker_Click"/>
+                    </ContextMenu>
+                </Button.ContextMenu>
+            </Button>
             <Button DockPanel.Dock="Right" x:Name="MediaButton" Content="Media (0)" ToolTip="Show detected media"
                     Padding="8,2" Margin="6,0,0,0" Click="ToggleMedia_Click"/>
             <Button DockPanel.Dock="Right" x:Name="BookmarkButton" Content="&#x2606;" ToolTip="Add or remove bookmark"

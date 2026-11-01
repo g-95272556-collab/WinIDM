@@ -33,8 +33,13 @@ public static class TrackingParams
     };
 
     /// <summary>The URL without tracking parameters, or <c>null</c> when nothing would change.</summary>
-    public static string? Strip(string url)
+    public static string? Strip(string url) => Strip(url, out _);
+
+    /// <inheritdoc cref="Strip(string)"/>
+    /// <param name="removed">How many parameters were removed.</param>
+    public static string? Strip(string url, out int removed)
     {
+        removed = 0;
         if (!HostUtil.TryGetHttpUri(url, out var uri) || uri.Query.Length <= 1) return null;
         var host = HostUtil.NormalizeHost(uri.Host);
 
@@ -43,14 +48,13 @@ public static class TrackingParams
         if (names.Any(SignatureNames.Contains)) return null;
 
         var kept = new List<string>(pairs.Length);
-        bool removed = false;
         for (int i = 0; i < pairs.Length; i++)
         {
             if (pairs[i].Length == 0) continue;
-            if (IsTracking(names[i], host)) { removed = true; continue; }
+            if (IsTracking(names[i], host)) { removed++; continue; }
             kept.Add(pairs[i]);
         }
-        if (!removed) return null;
+        if (removed == 0) return null;
 
         // Rebuild from the original text so the kept parameters keep their exact encoding.
         var b = new UriBuilder(uri) { Query = string.Join('&', kept) };

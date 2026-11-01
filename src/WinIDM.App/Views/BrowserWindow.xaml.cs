@@ -243,6 +243,7 @@ public partial class BrowserWindow : Window
         var tab = _current;
         if (tab is null) return;
         MediaButton.Content = $"Media ({tab.Media.Count})";
+        RefreshShieldsButton(tab);
         BookmarkButton.Content = IsBookmarked(tab.Address) ? "★" : "☆";
         Title = $"{tab.Title} - " + (_incognito ? "Incognito" : "WinIDM Browser");
         StatusText.Text = tab.IsLoading ? "Loading…" : tab.Address;
@@ -352,6 +353,7 @@ public partial class BrowserWindow : Window
             if (e.Uri != "about:blank") tab.IsStartPage = false;
             // Media is recalculated for every main navigation.
             tab.Media.Clear();
+            ResetShieldsCounters(tab, e);
             if (tab.View?.CoreWebView2 is { } navCore) OnScriptNavigationStarting(tab, navCore, e.Uri);
             if (_current == tab) RefreshChrome();
             return;

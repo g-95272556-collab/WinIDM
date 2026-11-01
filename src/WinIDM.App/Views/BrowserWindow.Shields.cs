@@ -62,14 +62,21 @@ public partial class BrowserWindow
         if (!ShieldsActive(e.Uri) || HeaderOrEmpty(e.RequestHeaders, "Content-Type").Length > 0) return false;
 
         var target = e.Uri;
-        if (_c.Settings.Bool(Keys.StripTrackingParams) && TrackingParams.Strip(target) is { } clean) target = clean;
+        int removed = 0;
+        bool upgraded = false;
+        if (_c.Settings.Bool(Keys.StripTrackingParams) && TrackingParams.Strip(target, out removed) is { } clean) target = clean;
         if (_c.Settings.Bool(Keys.HttpsUpgrade) && HttpsUpgrade.TryUpgrade(target, _httpOnlyHosts) is { } secure)
         {
             _pendingUpgrades[tab] = new PendingUpgrade { HttpsUrl = secure, Host = new Uri(secure).Host };
             target = secure;
+            upgraded = true;
         }
         if (target == e.Uri) return false;
 
+        tab.ShieldsBlocked = 0;
+        tab.ShieldsParamsRemoved = removed;
+        tab.ShieldsUpgraded = upgraded;
+        tab.ShieldsRewriteTarget = target;
         e.Cancel = true;
         core.Navigate(target);
         return true;
@@ -131,14 +138,124 @@ public partial class BrowserWindow
         if (e.IsSuccess || !UpgradeFallbackErrors.Contains(e.WebErrorStatus)) return;
 
         _httpOnlyHosts.Add(p.Host);
+        tab.ShieldsUpgraded = false;
         core.Navigate(HttpsUpgrade.Downgrade(p.HttpsUrl));
     }
 
-    /// <summary>Whether the shields apply to a page.</summary>
-    private bool ShieldsActive(string? pageUrl) => UrlHelper.IsHttp(pageUrl);
+    // ---------- Per-site switch
 
-    /// <summary>Sites where the user switched the shields off.</summary>
-    private IReadOnlyCollection<string> ShieldExemptSites() => Array.Empty<string>();
+    /// <summary>
+    /// Incognito changes stay in memory: switching a site off or on there must not write the host to disk.
+    /// </summary>
+    private readonly HashSet<string> _sessionShieldsOff = new(StringComparer.OrdinalIgnoreCase);
+    private readonly HashSet<string> _sessionShieldsOn = new(StringComparer.OrdinalIgnoreCase);
+
+    private HashSet<string> SavedShieldsOffSites() =>
+        new(_c.Settings.Text(Keys.ShieldsOffSites)
+                .Split(new[] { '\n', '\r', ',', ' ' }, StringSplitOptions.RemoveEmptyEntries),
+            StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Sites where the user switched the shields off (a host also covers its subdomains).</summary>
+    private IReadOnlyCollection<string> ShieldExemptSites()
+    {
+        var sites = SavedShieldsOffSites();
+        sites.UnionWith(_sessionShieldsOff);
+        sites.ExceptWith(_sessionShieldsOn);
+        return sites;
+    }
+
+    private bool IsShieldsOff(string? host)
+    {
+        if (string.IsNullOrEmpty(host)) return false;
+        foreach (var site in ShieldExemptSites())
+        {
+            if (host.Equals(site, StringComparison.OrdinalIgnoreCase)
+                || host.EndsWith("." + site, StringComparison.OrdinalIgnoreCase)) return true;
+        }
+        return false;
+    }
+
+    /// <summary>Whether the shields apply to a page.</summary>
+    private bool ShieldsActive(string? pageUrl) =>
+        Uri.TryCreate(pageUrl, UriKind.Absolute, out var u) && u.Scheme is "http" or "https" && !IsShieldsOff(u.Host);
+
+    private void SetShieldsOff(string host, bool off)
+    {
+        host = host.ToLowerInvariant();
+        if (_incognito)
+        {
+            (off ? _sessionShieldsOff : _sessionShieldsOn).Add(host);
+            (off ? _sessionShieldsOn : _sessionShieldsOff).Remove(host);
+            return;
+        }
+        var saved = SavedShieldsOffSites();
+        if (off) saved.Add(host); else saved.Remove(host);
+        _c.Settings.Set(Keys.ShieldsOffSites, string.Join('\n', saved.OrderBy(s => s, StringComparer.Ordinal)));
+    }
+
+    private void ResetShieldsCounters(BrowserTabViewModel tab, CoreWebView2NavigationStartingEventArgs e)
+    {
+        if (e.IsRedirected) return;
+        if (tab.ShieldsRewriteTarget is { } t && t == e.Uri)
+        {
+            tab.ShieldsRewriteTarget = null;
+            return;
+        }
+        tab.ShieldsRewriteTarget = null;
+        tab.ShieldsBlocked = 0;
+        tab.ShieldsParamsRemoved = 0;
+        tab.ShieldsUpgraded = false;
+    }
+
+    private void RefreshShieldsButton(BrowserTabViewModel tab)
+    {
+        var page = tab.View?.Source?.ToString();
+        if (!UrlHelper.IsHttp(page)) ShieldsButton.Content = "Shields";
+        else if (!ShieldsActive(page)) ShieldsButton.Content = "Shields off";
+        else ShieldsButton.Content = $"Shields ({tab.ShieldsBlocked + tab.ShieldsParamsRemoved + (tab.ShieldsUpgraded ? 1 : 0)})";
+    }
+
+    private void ShieldsMenu_Opened(object sender, System.Windows.RoutedEventArgs e)
+    {
+        var tab = _current;
+        var src = tab?.View?.Source;
+        bool web = tab is not null && src is not null && UrlHelper.IsHttp(src.ToString());
+        bool on = web && ShieldsActive(src!.ToString());
+
+        ShieldsSiteItem.IsEnabled = web;
+        ShieldsSiteItem.IsChecked = on;
+        ShieldsSiteItem.Header = web ? $"Shields for {src!.Host}" : "Shields for this site";
+        ShieldsBlockedItem.Header = $"Ads and trackers blocked: {(on && IsAdblockOnFor(tab!) ? tab!.ShieldsBlocked.ToString() : "off")}";
+        ShieldsParamsItem.Header = $"Tracking parameters removed: {(on && _c.Settings.Bool(Keys.StripTrackingParams) ? tab!.ShieldsParamsRemoved.ToString() : "off")}";
+        ShieldsHttpsItem.Header = "Connection: " + (src?.Scheme == "https"
+            ? (tab!.ShieldsUpgraded ? "upgraded to HTTPS" : "HTTPS")
+            : web ? "HTTP (not secure)" : "-");
+        ShieldsFingerprintItem.Header = "Fingerprinting protection: " +
+            (on && _c.Settings.Bool(Keys.FingerprintProtection) ? "on" : "off");
+    }
+
+    /// <summary>
+    /// Switches every shield for the site (ad blocker, cosmetic rules, tracking parameters, HTTPS upgrade, referrer
+    /// cap, fingerprinting) and reloads the page. The ad blocker's own per-site allowlist is left as it is.
+    /// </summary>
+    private async void ShieldsSite_Click(object sender, System.Windows.RoutedEventArgs e)
+    {
+        if (_current?.View?.CoreWebView2 is not { } core || _current.View.Source is not { } src || !UrlHelper.IsHttp(src.ToString()))
+            return;
+        bool on = ShieldsSiteItem.IsChecked;
+        SetShieldsOff(src.Host, off: !on);
+        try
+        {
+            foreach (var t in _tabs)
+                if (t.View?.CoreWebView2 is { } c) await RegisterFingerprintShieldAsync(t, c);
+        }
+        catch (Exception ex)
+        {
+            AppLog.Error("Browser shields", ex);
+        }
+        StatusText.Text = on ? $"Shields are on for {src.Host}." : $"Shields are off for {src.Host}.";
+        core.Reload();
+    }
 
     /// <summary>Fingerprint seed of this window: every site gets new values in a new window (and in incognito).</summary>
     private readonly string _fingerprintKey = System.Security.Cryptography.RandomNumberGenerator.GetHexString(32);
