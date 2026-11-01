@@ -68,6 +68,25 @@ settings table `03a`. Statuses:
 | Text encoding, DRM handling | Gap | WebView2 has no API for a default encoding; DRM is out of scope |
 | Bottom address bar, swipe gestures, hand mode, floating buttons, pull to refresh, landscape, PiP aspect, refresh-rate match, overlay player gestures | Android only | |
 
+## Brave-style shields (beyond IDM+)
+
+Added on request after the parity round. Every shield acts on the page or the main-frame navigation only; video,
+audio, HLS/DASH playlists and segments, XHR and fetch are not rewritten, so media capture, preview and download
+work as before. All switches are in Settings > Browser > Privacy and security; the **Shields** button switches
+them all off for one site (in incognito that choice is kept in memory only).
+
+| Brave function | Status | Notes |
+|---|---|---|
+| Ads and trackers, cosmetic filtering, hosts | Present | Ad blocker; counted on the Shields button |
+| Global Privacy Control | Added | `Sec-GPC: 1` and `navigator.globalPrivacyControl` |
+| Query filter (tracking parameters) | Added | `utm_*`, `fbclid`, `gclid`… removed from main-frame navigations; signed URLs (S3, CloudFront, tokens) and form posts untouched |
+| HTTPS by default | Added | Public hosts only; falls back to HTTP for the session on a TLS or connection error, or when the server redirects back to HTTP. A navigation that turns into a download is never retried |
+| Cross-site referrer cap | Added | Origin only; media, XHR and fetch keep the page's own Referer for CDNs that check it |
+| Fingerprinting protection (farbling) | Added | Canvas read-back, WebGL GPU strings, offline audio, CPU count; stable per site per window. Page-script level, weaker than Brave's engine change |
+| Per-site Shields switch and counters | Added | |
+| Scriptlets (`+js`), procedural filters, `redirect=`, `removeparam` from lists, cookie-banner lists | Gap | Planned as the second stage |
+| Tor windows, Rewards/BAT, Sync, Wallet, Leo | Not copied | Out of scope; Tor works through the Orbot/SOCKS5 proxy |
+
 ## Proxy and torrent
 
 | IDM+ function | Status | Notes |
