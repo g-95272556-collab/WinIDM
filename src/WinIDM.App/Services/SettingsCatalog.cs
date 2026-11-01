@@ -237,6 +237,7 @@ public static class SettingsCatalog
         B("do_not_track", "Send the DNT: 1 header", false, CatBrowser, BPr);
         B("save_data", "Send the Save-Data header", false, CatBrowser, BPr);
         B("browser.gpc", "Send Global Privacy Control (Sec-GPC: 1, do not sell or share my data)", true, CatBrowser, BPr);
+        B("browser.strip_tracking_params", "Remove tracking parameters from page links (utm_*, fbclid, gclid…)", true, CatBrowser, BPr);
         B("third_party", "Block third-party cookies (default: blocked)", true, CatBrowser, BPr);
         B("allow_cookies", "Enable cookies", true, CatBrowser, BPr);
         B("incognito_cookies", "Enable cookies in incognito mode", true, CatBrowser, BPr);

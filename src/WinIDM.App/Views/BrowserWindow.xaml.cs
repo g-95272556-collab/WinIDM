@@ -340,6 +340,8 @@ public partial class BrowserWindow : Window
     {
         if (!Uri.TryCreate(e.Uri, UriKind.Absolute, out var u)) return;
 
+        if (TryRewriteNavigation(tab, e)) return;
+
         if (u.Scheme is "http" or "https" or "about" or "data" or "blob" or "view-source")
         {
             tab.IsLoading = true;
