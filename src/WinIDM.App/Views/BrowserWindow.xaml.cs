@@ -218,7 +218,8 @@ public partial class BrowserWindow : Window
         }
 
         await WireCoreAsync(tab, wv.CoreWebView2);
-        if (url is null) ShowStartPage(tab);
+        // The user may already have typed an address while the tab was being set up (Go works once the core exists).
+        if (url is null) { if (!_navigatedTabs.Contains(tab)) ShowStartPage(tab); }
         else Navigate(tab, url);
         return tab;
     }
@@ -250,6 +251,7 @@ public partial class BrowserWindow : Window
     private void CloseTab(BrowserTabViewModel tab)
     {
         int idx = _tabs.IndexOf(tab);
+        _navigatedTabs.Remove(tab);
         if (!_incognito) RememberClosedTab(tab);
         _tabs.Remove(tab);
         ReleaseScripts(tab);
@@ -390,8 +392,12 @@ public partial class BrowserWindow : Window
             _c.Settings.Text(Keys.SearchEngine), _c.Settings.Text(Keys.SearchCustom));
         if (resolved.Length == 0) return;
         if (tab.View?.CoreWebView2 is not { } core) return;
+        _navigatedTabs.Add(tab);
         core.Navigate(resolved);
     }
+
+    /// <summary>Tabs the user already sent somewhere, so a start page that finishes loading late never replaces it.</summary>
+    private readonly HashSet<BrowserTabViewModel> _navigatedTabs = new();
 
     private void ShowStartPage(BrowserTabViewModel tab)
     {

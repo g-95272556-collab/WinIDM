@@ -43,7 +43,7 @@ public sealed partial class TabItemViewModel : ObservableObject
     /// <summary>"Show download count with tab name" (03a: sdcwtn).</summary>
     [ObservableProperty] [NotifyPropertyChangedFor(nameof(DisplayTitle))] private bool _showCount = true;
 
-    public string DisplayTitle => ShowCount && Tab != DownloadTab.Scheduler ? $"{Title} ({Count})" : Title;
+    public string DisplayTitle => ShowCount ? $"{Title} ({Count})" : Title;
 }
 
 /// <summary>Main view model: download list, tabs, filters, row actions and bulk actions.</summary>

@@ -28,10 +28,32 @@ public partial class BrowserWindow
 
     private async Task WireExtrasAsync(BrowserTabViewModel tab, CoreWebView2 core)
     {
-        core.Settings.IsReputationCheckingRequired = _c.Settings.Bool(Keys.SafeBrowsing);
+        try
+        {
+            await WireExtrasCoreAsync(tab, core);
+        }
+        catch (Exception ex)
+        {
+            // An optional feature the installed WebView2 runtime lacks must never stop the tab from working.
+            AppLog.Error("Browser extras", ex);
+        }
+    }
+
+    private async Task WireExtrasCoreAsync(BrowserTabViewModel tab, CoreWebView2 core)
+    {
+        try
+        {
+            // Only switch SmartScreen off on request; on is the runtime's own default and is left untouched.
+            if (!_c.Settings.Bool(Keys.SafeBrowsing)) core.Settings.IsReputationCheckingRequired = false;
+        }
+        catch (Exception ex) when (ex is NotImplementedException or System.Runtime.InteropServices.COMException or InvalidOperationException)
+        {
+            AppLog.Error("Safe browsing switch", ex);
+        }
         core.StatusBarTextChanged += (_, _) => { if (_current == tab) ShowTargetUrl(core.StatusBarText); };
         core.ContainsFullScreenElementChanged += (_, _) => SetFullScreen(core.ContainsFullScreenElement);
-        if (tab.View is { } view) view.ZoomFactor = DefaultZoom;
+        // Touch the zoom only when the user changed the default (100% is the control's own starting zoom).
+        if (tab.View is { } view && Math.Abs(DefaultZoom - 1.0) > 0.001) view.ZoomFactor = DefaultZoom;
 
         if (RenderingCss() is { } css)
             await core.AddScriptToExecuteOnDocumentCreatedAsync(StyleScript("winidm-rendering", css));
