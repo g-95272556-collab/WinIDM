@@ -6,8 +6,8 @@ using WinIDM.Browser;
 namespace WinIDM.App.Views;
 
 /// <summary>
-/// Brave-style privacy shields on top of WebView2: Global Privacy Control, tracking-parameter removal and
-/// HTTPS by default. The request-header half of each shield lives in <see cref="ApplyRequestPrivacy"/>.
+/// Brave-style privacy shields on top of WebView2: Global Privacy Control, tracking-parameter removal,
+/// HTTPS by default and fingerprinting protection. The request-header half of each shield lives in <see cref="ApplyRequestPrivacy"/>.
 /// <para>
 /// Every rewrite here acts on main-frame navigations only. Subresources (video, audio, HLS/DASH playlists and
 /// segments, XHR) are never rewritten, so media capture, preview and download see the URLs the page really uses.
@@ -117,6 +117,13 @@ public partial class BrowserWindow
     /// <summary>The navigation became a download: the engine takes it over, and an HTTP retry must not start a second one.</summary>
     private void ForgetUpgrade(BrowserTabViewModel tab) => _pendingUpgrades.Remove(tab);
 
+    /// <summary>A closed tab leaves nothing behind.</summary>
+    private void ForgetShields(BrowserTabViewModel tab)
+    {
+        _pendingUpgrades.Remove(tab);
+        _fingerprintScriptIds.Remove(tab);
+    }
+
     private void OnShieldsNavigationCompleted(BrowserTabViewModel tab, CoreWebView2 core, CoreWebView2NavigationCompletedEventArgs e)
     {
         if (!_pendingUpgrades.TryGetValue(tab, out var p) || p.NavigationId != e.NavigationId) return;
@@ -130,6 +137,23 @@ public partial class BrowserWindow
     /// <summary>Whether the shields apply to a page.</summary>
     private bool ShieldsActive(string? pageUrl) => UrlHelper.IsHttp(pageUrl);
 
+    /// <summary>Sites where the user switched the shields off.</summary>
+    private IReadOnlyCollection<string> ShieldExemptSites() => Array.Empty<string>();
+
+    /// <summary>Fingerprint seed of this window: every site gets new values in a new window (and in incognito).</summary>
+    private readonly string _fingerprintKey = System.Security.Cryptography.RandomNumberGenerator.GetHexString(32);
+
+    /// <summary>The fingerprint script registered on each tab, replaced when the per-site exemptions change.</summary>
+    private readonly Dictionary<BrowserTabViewModel, string> _fingerprintScriptIds = new();
+
+    private async Task RegisterFingerprintShieldAsync(BrowserTabViewModel tab, CoreWebView2 core)
+    {
+        if (_fingerprintScriptIds.Remove(tab, out var old)) core.RemoveScriptToExecuteOnDocumentCreated(old);
+        if (!_c.Settings.Bool(Keys.FingerprintProtection)) return;
+        _fingerprintScriptIds[tab] = await core.AddScriptToExecuteOnDocumentCreatedAsync(
+            FingerprintShield.BuildScript(_fingerprintKey, ShieldExemptSites()));
+    }
+
     private async Task WireShieldsAsync(BrowserTabViewModel tab, CoreWebView2 core)
     {
         core.NavigationCompleted += (_, e) => OnShieldsNavigationCompleted(tab, core, e);
@@ -137,6 +161,7 @@ public partial class BrowserWindow
         {
             if (_c.Settings.Bool(Keys.GlobalPrivacyControl))
                 await core.AddScriptToExecuteOnDocumentCreatedAsync(GpcScript);
+            await RegisterFingerprintShieldAsync(tab, core);
         }
         catch (Exception ex)
         {

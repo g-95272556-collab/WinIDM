@@ -240,6 +240,7 @@ public static class SettingsCatalog
         B("browser.strip_tracking_params", "Remove tracking parameters from page links (utm_*, fbclid, gclid…)", true, CatBrowser, BPr);
         B("browser.https_upgrade", "Upgrade pages to HTTPS (falls back to HTTP when the site has no HTTPS)", true, CatBrowser, BPr);
         B("browser.cap_referrer", "Send only the site address as Referer to other sites (media requests excepted)", true, CatBrowser, BPr);
+        B("browser.fingerprint_protection", "Fingerprinting protection (canvas, WebGL, offline audio, CPU count; video and audio playback untouched)", true, CatBrowser, BPr);
         B("third_party", "Block third-party cookies (default: blocked)", true, CatBrowser, BPr);
         B("allow_cookies", "Enable cookies", true, CatBrowser, BPr);
         B("incognito_cookies", "Enable cookies in incognito mode", true, CatBrowser, BPr);

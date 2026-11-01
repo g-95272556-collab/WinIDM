@@ -252,6 +252,7 @@ public partial class BrowserWindow : Window
     {
         int idx = _tabs.IndexOf(tab);
         _navigatedTabs.Remove(tab);
+        ForgetShields(tab);
         if (!_incognito) RememberClosedTab(tab);
         _tabs.Remove(tab);
         ReleaseScripts(tab);

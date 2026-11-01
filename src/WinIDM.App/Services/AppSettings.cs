@@ -15,6 +15,7 @@ public static class Keys
     public const string StripTrackingParams = "browser.strip_tracking_params";
     public const string HttpsUpgrade = "browser.https_upgrade";
     public const string CapReferrer = "browser.cap_referrer";
+    public const string FingerprintProtection = "browser.fingerprint_protection";
     public const string BlockThirdPartyCookies = "third_party";
     public const string SkipEditor = "idm_pref_skip_editor";
     public const string AutoStart = "skip_editor_auto_start";
