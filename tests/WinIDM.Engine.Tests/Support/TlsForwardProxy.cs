@@ -18,7 +18,7 @@ public static class TestCertificate
         using var made = request.CreateSelfSigned(DateTimeOffset.UtcNow.AddDays(-1), DateTimeOffset.UtcNow.AddDays(1));
 
         // The key must be exportable; a directly generated certificate does not support ephemeral keys on Windows.
-        return new X509Certificate2(made.Export(X509ContentType.Pfx), (string?)null,
+        return X509CertificateLoader.LoadPkcs12(made.Export(X509ContentType.Pfx), (string?)null,
             X509KeyStorageFlags.UserKeySet | X509KeyStorageFlags.Exportable);
     }
 }

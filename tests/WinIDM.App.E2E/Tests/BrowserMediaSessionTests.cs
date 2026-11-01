@@ -35,7 +35,7 @@ public sealed class BrowserMediaSessionTests
     private static void RunMediaSessionScenario(bool skipEditor, string scenario)
     {
         var data = AppSession.NewTempDataDir();
-        using var server = FixtureServer.StartAsync().GetAwaiter().GetResult();
+        using var server = FixtureServer.Start();
         try
         {
             var payload = FixtureServer.Deterministic(PayloadBytes, seed: PayloadSeed);

@@ -24,7 +24,7 @@ public sealed class BrowserTests
     {
         var data = AppSession.NewTempDataDir();
         Directory.CreateDirectory(data);
-        using var server = FixtureServer.StartAsync().GetAwaiter().GetResult();
+        using var server = FixtureServer.Start();
         try
         {
             var mediaPayload = FixtureServer.Deterministic(1 * 1024 * 1024, seed: 6006);

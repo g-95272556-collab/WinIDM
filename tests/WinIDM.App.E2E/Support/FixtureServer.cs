@@ -37,6 +37,12 @@ internal sealed class FixtureServer : IAsyncDisposable, IDisposable
 
     public string BaseUrl { get; private set; } = "";
 
+    /// <summary>
+    /// Synchronous start for the UI Automation tests, which stay synchronous on purpose (one thread drives the
+    /// desktop from start to finish). Kestrel starting on 127.0.0.1 has no UI context to deadlock on.
+    /// </summary>
+    public static FixtureServer Start() => StartAsync().GetAwaiter().GetResult();
+
     public static async Task<FixtureServer> StartAsync()
     {
         var server = new FixtureServer();

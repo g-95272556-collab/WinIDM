@@ -13,7 +13,7 @@ public sealed class DownloadTests
     public void S02_AddUrl_DownloadCompletes_HashMatches_RowMovesToFinishedTab()
     {
         var data = AppSession.NewTempDataDir();
-        using var server = FixtureServer.StartAsync().GetAwaiter().GetResult();
+        using var server = FixtureServer.Start();
         try
         {
             var payload = FixtureServer.Deterministic(2 * MiB, seed: 1001);
@@ -48,7 +48,7 @@ public sealed class DownloadTests
     public void S03_PauseAndResume_SlowLargeDownload_FinalHashMatches()
     {
         var data = AppSession.NewTempDataDir();
-        using var server = FixtureServer.StartAsync().GetAwaiter().GetResult();
+        using var server = FixtureServer.Start();
         try
         {
             var payload = FixtureServer.Deterministic(4 * MiB, seed: 2002);
@@ -111,7 +111,7 @@ public sealed class DownloadTests
     public void S04_RowContextMenu_GroupActions_Filters_Clipboard_Checksum()
     {
         var data = AppSession.NewTempDataDir();
-        using var server = FixtureServer.StartAsync().GetAwaiter().GetResult();
+        using var server = FixtureServer.Start();
         try
         {
             var alpha = FixtureServer.Deterministic(1 * MiB, seed: 3003);
@@ -188,7 +188,7 @@ public sealed class DownloadTests
     public void S04B_CopyLink_ClipboardLocked_ShowsMessage_AppStaysAlive()
     {
         var data = AppSession.NewTempDataDir();
-        using var server = FixtureServer.StartAsync().GetAwaiter().GetResult();
+        using var server = FixtureServer.Start();
         try
         {
             server.Add("/files/locked.bin", FixtureServer.Deterministic(64 * 1024, seed: 5005));

@@ -221,6 +221,6 @@ public class FilterListManagerTests : IDisposable
         m.SetEnabled(id, true);
         var blocker = new AdBlocker();
         Assert.Equal(0, m.ApplyTo(blocker));
-        Assert.Empty(blocker.Sources.Where(s => s == "Without"));
+        Assert.DoesNotContain("Without", blocker.Sources);
     }
 }
