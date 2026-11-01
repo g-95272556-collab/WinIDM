@@ -131,7 +131,10 @@ public static class SettingsCatalog
         // --- Proxy ---
         const string Px = "Proxy server";
         B("idm_pref_proxy", "Use a proxy for downloads", false, CatProxy, Px, SettingStatus.EngineHook);
-        C("idm_pref_proxy_type", "Proxy type", "HTTP", new[] { "HTTP", "SOCKS5" }, CatProxy, Px, SettingStatus.EngineHook);
+        C("idm_pref_proxy_provider", "Proxy provider (Orbot = Tor SOCKS5 127.0.0.1:9050, I2P = HTTP 127.0.0.1:4444)", "Manual",
+          new[] { "Manual", "Orbot (Tor)", "I2P" }, CatProxy, Px, SettingStatus.EngineHook);
+        C("idm_pref_proxy_type", "Proxy type", "HTTP", new[] { "HTTP", "SOCKS5", "HTTPS" }, CatProxy, Px, SettingStatus.EngineHook);
+        B("idm_pref_proxy_disable_webrtc", "Disable WebRTC in the browser while a proxy is used", false, CatProxy, Px);
         T("idm_pref_proxy_host", "Proxy host", "", CatProxy, Px, SettingStatus.EngineHook);
         I("idm_pref_proxy_port", "Proxy port (1-65535)", 0, CatProxy, Px, SettingStatus.EngineHook);
         T("idm_pref_proxy_user", "Proxy user name (the password is not stored here)", "", CatProxy, Px, SettingStatus.EngineHook);
@@ -160,6 +163,10 @@ public static class SettingsCatalog
         B("enable_ip_filtering", "Enable IP filtering", false, CatTorrent, Tr, SettingStatus.EngineHook);
         T("ip_filter_path", "IP filter file path (.dat, .p2p)", "", CatTorrent, Tr, SettingStatus.EngineHook);
         B("validate_https_trackers", "Validate tracker HTTPS certificates", false, CatTorrent, Tr, SettingStatus.EngineHook);
+        B("acatracker", "Always contact all trackers", true, CatTorrent, Tr, SettingStatus.EngineHook);
+        B("default_trackers", "Add the default public trackers to new torrents", false, CatTorrent, Tr, SettingStatus.EngineHook);
+        T("dturl", "Tracker list URL added to new torrents (plain text, one tracker per line)", "", CatTorrent, Tr, SettingStatus.EngineHook);
+        B("idm_pref_add_tracker_auto", "Automatically add trackers to duplicate torrents", false, CatTorrent, Tr, SettingStatus.EngineHook);
 
         // --- Advanced ---
         const string Ad = "System and performance";

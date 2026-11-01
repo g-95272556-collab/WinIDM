@@ -115,12 +115,9 @@ public partial class BrowserWindow : Window
     /// <summary>Chromium arguments: manual proxy when enabled. The proxy password is not used here.</summary>
     private string BuildBrowserArguments()
     {
-        if (!_c.Settings.Bool(Keys.ProxyEnabled)) return "";
-        var host = _c.Settings.Text(Keys.ProxyHost).Trim();
-        int port = _c.Settings.Int(Keys.ProxyPort);
-        if (host.Length == 0 || port is < 1 or > 65535) return "";
-        var scheme = _c.Settings.Text(Keys.ProxyType) == "SOCKS5" ? "socks5" : "http";
-        return $"--proxy-server={scheme}://{host}:{port}";
+        // Same proxy as the download engine (type names or numbers, and the Orbot/I2P presets).
+        if (WinIDM.Engine.ProxyTypes.Endpoint(_c.RawSettings) is not { } proxy) return "";
+        return $"--proxy-server={proxy.Scheme}://{proxy.Host}:{proxy.Port}";
     }
 
     private async void OnClosing(object? sender, System.ComponentModel.CancelEventArgs e)
@@ -312,7 +309,9 @@ public partial class BrowserWindow : Window
         core.PermissionRequested += (_, e) => OnPermissionRequested(e);
         core.ServerCertificateErrorDetected += (_, e) => OnCertificateError(e);
 
-        if (_c.Settings.Bool(Keys.WebRtcBlock))
+        // WebRTC can reveal the real address behind a proxy (03a: idm_pref_proxy_disable_webrtc).
+        bool proxyWebRtc = _c.Settings.Bool(Keys.ProxyDisableWebRtc) && WinIDM.Engine.ProxyTypes.Endpoint(_c.RawSettings) is not null;
+        if (_c.Settings.Bool(Keys.WebRtcBlock) || proxyWebRtc)
             await core.AddScriptToExecuteOnDocumentCreatedAsync(WebRtcBlockScript);
 
         WireScripts(tab, core);

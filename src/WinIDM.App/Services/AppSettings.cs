@@ -130,6 +130,7 @@ public static class Keys
     public const string ProxyType = "idm_pref_proxy_type";
     public const string ProxyHost = "idm_pref_proxy_host";
     public const string ProxyPort = "idm_pref_proxy_port";
+    public const string ProxyDisableWebRtc = "idm_pref_proxy_disable_webrtc";
 }
 
 /// <summary>

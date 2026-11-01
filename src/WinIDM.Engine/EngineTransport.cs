@@ -71,7 +71,14 @@ internal static class EngineTransport
     /// <summary>Builds a <see cref="WebProxy"/> from settings. The scheme is <c>http</c> or <c>socks5</c>.</summary>
     internal static WebProxy BuildProxy(ISettingsStore settings)
     {
-        var type = settings.Get(SettingKeys.ProxyType, SettingDefaults.ProxyType);
+        var provider = settings.Get(SettingKeys.ProxyProvider, SettingDefaults.ProxyProvider);
+        if (!provider.Equals(SettingDefaults.ProxyProvider, StringComparison.OrdinalIgnoreCase) &&
+            ProxyTypes.Endpoint(settings) is { } preset)
+        {
+            return new WebProxy(new UriBuilder(preset.Scheme, preset.Host, preset.Port).Uri);
+        }
+
+        var type = ProxyTypes.Read(settings);
         var scheme = type switch
         {
             ProxyTypes.Http => "http",

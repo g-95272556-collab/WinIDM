@@ -1,3 +1,5 @@
+using WinIDM.Core.Contracts;
+
 namespace WinIDM.Engine;
 
 /// <summary>
@@ -37,6 +39,9 @@ public static class SettingKeys
     public const string ProxyType = "idm_pref_proxy_type";
 
     public const string ProxyHost = "idm_pref_proxy_host";
+
+    /// <summary>Proxy provider: "Manual", "Orbot (Tor)" or "I2P" (03a). The last two are presets for local clients.</summary>
+    public const string ProxyProvider = "idm_pref_proxy_provider";
     public const string ProxyPort = "idm_pref_proxy_port";
     public const string ProxyUser = "idm_pref_proxy_user";
 
@@ -143,6 +148,47 @@ public static class ProxyTypes
     /// then CONNECT or an absolute-form request through the proxy. The proxy certificate is validated against the system certificate store.
     /// </summary>
     public const int HttpsTls = 2;
+
+    /// <summary>
+    /// The proxy type as stored: the IDM+ number (0/1/2) or the name the Settings page writes ("HTTP", "SOCKS5",
+    /// "HTTPS"). Both forms must work, or a SOCKS5 choice would silently run as HTTP. Unknown text gives -1.
+    /// </summary>
+    public static int Read(ISettingsStore settings)
+    {
+        var raw = settings.Get<string?>(SettingKeys.ProxyType, null)?.Trim();
+        if (string.IsNullOrEmpty(raw)) return SettingDefaults.ProxyType;
+        if (int.TryParse(raw, System.Globalization.NumberStyles.Integer, System.Globalization.CultureInfo.InvariantCulture, out var n)) return n;
+        return raw.ToUpperInvariant() switch
+        {
+            "HTTP" => Http,
+            "SOCKS5" or "SOCKS" => Socks5,
+            "HTTPS" => HttpsTls,
+            _ => -1,
+        };
+    }
+
+    /// <summary>
+    /// Proxy scheme, host and port, or null when no proxy is used. The IDM+ providers are presets for local
+    /// clients: "Orbot (Tor)" is SOCKS5 127.0.0.1:9050 and "I2P" is HTTP 127.0.0.1:4444 (03a: idm_pref_proxy_provider).
+    /// </summary>
+    public static (string Scheme, string Host, int Port)? Endpoint(ISettingsStore settings)
+    {
+        if (!settings.Get(SettingKeys.ProxyEnabled, SettingDefaults.ProxyEnabled)) return null;
+        var provider = settings.Get(SettingKeys.ProxyProvider, SettingDefaults.ProxyProvider);
+        if (provider.StartsWith("Orbot", StringComparison.OrdinalIgnoreCase)) return ("socks5", "127.0.0.1", 9050);
+        if (provider.StartsWith("I2P", StringComparison.OrdinalIgnoreCase)) return ("http", "127.0.0.1", 4444);
+
+        var scheme = Read(settings) switch
+        {
+            Http => "http",
+            Socks5 => "socks5",
+            HttpsTls => "https",
+            _ => null,
+        };
+        var host = settings.Get(SettingKeys.ProxyHost, SettingDefaults.ProxyHost).Trim();
+        var port = settings.Get(SettingKeys.ProxyPort, SettingDefaults.ProxyPort);
+        return scheme is null || host.Length == 0 || port is < 1 or > 65535 ? null : (scheme, host, port);
+    }
 }
 
 /// <summary>System actions the App can request after all downloads finish. The engine does not perform them.</summary>
@@ -195,6 +241,7 @@ public static class SettingDefaults
     public const int ProxyType = ProxyTypes.Http;
     public const string ProxyHost = "";
     public const int ProxyPort = 0;
+    public const string ProxyProvider = "Manual";
     public const string ProxyUser = "";
     public const string ProxyPass = "";
     public const bool ConvertTsToMp4 = true;

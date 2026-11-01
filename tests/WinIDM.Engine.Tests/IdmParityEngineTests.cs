@@ -132,6 +132,37 @@ public sealed class IdmParityEngineTests
         Assert.Equal(TestData.Sha256Hex(content), TestData.Sha256Hex(FinalPath(done)));
     }
 
+    /// <summary>The Settings page stores the proxy type by name; it must not fall back to HTTP for "SOCKS5".</summary>
+    [Theory]
+    [InlineData("SOCKS5", "socks5")]
+    [InlineData("HTTPS", "https")]
+    [InlineData("HTTP", "http")]
+    [InlineData("1", "socks5")]
+    public void ProxyType_ByNameOrNumber(string stored, string scheme)
+    {
+        using var temp = new TempDirectory();
+        var s = new JsonSettingsStore(Path.Combine(temp.Path, "settings.json"));
+        s.Set(SettingKeys.ProxyEnabled, true);
+        s.Set(SettingKeys.ProxyType, stored);
+        s.Set(SettingKeys.ProxyHost, "proxy.example");
+        s.Set(SettingKeys.ProxyPort, 1080);
+
+        Assert.Equal(scheme, EngineTransport.BuildProxy(s).Address!.Scheme);
+    }
+
+    [Theory]
+    [InlineData("Orbot (Tor)", "socks5://127.0.0.1:9050/")]
+    [InlineData("I2P", "http://127.0.0.1:4444/")]
+    public void ProxyProvider_PresetsLocalClients(string provider, string expected)
+    {
+        using var temp = new TempDirectory();
+        var s = new JsonSettingsStore(Path.Combine(temp.Path, "settings.json"));
+        s.Set(SettingKeys.ProxyEnabled, true);
+        s.Set(SettingKeys.ProxyProvider, provider);
+
+        Assert.Equal(expected, EngineTransport.BuildProxy(s).Address!.ToString());
+    }
+
     [Fact]
     public async Task RemoveOldLinks_ZeroDaysMeansOff()
     {

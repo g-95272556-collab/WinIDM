@@ -277,6 +277,37 @@ public class TorrentServiceTests : IDisposable
         Assert.Single(svc.GetTorrents());
     }
 
+    /// <summary>IDM+ "Automatically add trackers to duplicate torrents": the same magnet adds its trackers, not a second torrent.</summary>
+    [Fact]
+    public async Task DuplicateMagnet_MergesTrackers_WhenAutoAddIsOn()
+    {
+        const string hash = "1123456789abcdef0123456789abcdef01234567";
+        var store = OfflineSettings.Create().Put("idm_pref_add_tracker_auto", true).Put("acatracker", false);
+        await using var svc = new TorrentService(store, DataDir);
+
+        var id = await svc.AddMagnetAsync($"magnet:?xt=urn:btih:{hash}&tr=http%3A%2F%2F127.0.0.1%3A19%2Fannounce", Downloads);
+        var again = await svc.AddMagnetAsync($"magnet:?xt=urn:btih:{hash}&tr=udp%3A%2F%2F127.0.0.1%3A20%2Fannounce", Downloads);
+
+        Assert.Equal(id, again);
+        Assert.Single(svc.GetTorrents());
+        var trackers = svc.GetTrackers(id);
+        Assert.Contains(trackers, t => t.Contains("127.0.0.1:19"));
+        Assert.Contains(trackers, t => t.Contains("127.0.0.1:20"));
+    }
+
+    [Fact]
+    public async Task DefaultTrackers_AreAddedToNewTorrents()
+    {
+        const string hash = "2123456789abcdef0123456789abcdef01234567";
+        var store = OfflineSettings.Create().Put("default_trackers", true);
+        await using var svc = new TorrentService(store, DataDir);
+
+        var id = await svc.AddMagnetAsync($"magnet:?xt=urn:btih:{hash}", Downloads);
+
+        var trackers = svc.GetTrackers(id);
+        Assert.All(TorrentService.DefaultTrackers, t => Assert.Contains(trackers, x => x.TrimEnd('/') == t.TrimEnd('/')));
+    }
+
     [Fact]
     public async Task DisableTorrentSetting_BlocksNewTorrents()
     {

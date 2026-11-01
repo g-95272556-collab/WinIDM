@@ -27,6 +27,10 @@ public static class TorrentSettingKeys
     public const string EnableIpFiltering = "enable_ip_filtering";
     public const string IpFilterPath = "ip_filter_path";
     public const string ValidateHttpsTrackers = "validate_https_trackers";
+    public const string AlwaysContactAllTrackers = "acatracker";
+    public const string AddTrackersToDuplicates = "idm_pref_add_tracker_auto";
+    public const string UseDefaultTrackers = "default_trackers";
+    public const string TrackerListUrl = "dturl";
 
     // Global speed-limit keys (general Downloads section). Unit: KB/s.
     public const string SpeedLimiterEnabled = "idm_pref_speed_limiter";
@@ -75,6 +79,18 @@ public sealed class TorrentConfiguration
     /// <summary>Setting is stored, but MonoTorrent 3.0.2 has no HTTPS tracker certificate validation switch.</summary>
     public bool ValidateHttpsTrackers { get; private init; }
 
+    /// <summary>Announce to every tracker, not only the first working one of each tier (03a: acatracker, default on).</summary>
+    public bool AlwaysContactAllTrackers { get; private init; } = true;
+
+    /// <summary>Adding a torrent that already exists merges its trackers into the existing one instead of failing.</summary>
+    public bool AddTrackersToDuplicates { get; private init; }
+
+    /// <summary>Add the built-in public tracker list to new torrents.</summary>
+    public bool UseDefaultTrackers { get; private init; }
+
+    /// <summary>Plain-text tracker list (one URL per line) added to new torrents; empty = none.</summary>
+    public string TrackerListUrl { get; private init; } = "";
+
     /// <summary>Global download limit in bytes/second. 0 means unlimited.</summary>
     public int GlobalDownloadLimit { get; private init; }
 
@@ -119,6 +135,10 @@ public sealed class TorrentConfiguration
             EnableIpFiltering = store.Get(TorrentSettingKeys.EnableIpFiltering, false),
             IpFilterPath = (store.Get<string?>(TorrentSettingKeys.IpFilterPath, null) ?? "").Trim(),
             ValidateHttpsTrackers = store.Get(TorrentSettingKeys.ValidateHttpsTrackers, false),
+            AlwaysContactAllTrackers = store.Get(TorrentSettingKeys.AlwaysContactAllTrackers, true),
+            AddTrackersToDuplicates = store.Get(TorrentSettingKeys.AddTrackersToDuplicates, false),
+            UseDefaultTrackers = store.Get(TorrentSettingKeys.UseDefaultTrackers, false),
+            TrackerListUrl = (store.Get<string?>(TorrentSettingKeys.TrackerListUrl, null) ?? "").Trim(),
             GlobalDownloadLimit = speedLimiter ? KilobytesToBytesPerSecond(downKb) : 0,
             GlobalUploadLimit = KilobytesToBytesPerSecond(upKb),
         };

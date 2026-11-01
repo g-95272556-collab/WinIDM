@@ -159,13 +159,15 @@ public sealed class TorrentService : ITorrentService, IAsyncDisposable
 
         // Fetch metadata before holding the gate so other operations are not blocked for up to 60 seconds.
         byte[]? metadata = _config.FetchMetadata ? await TryFetchMetadataAsync(link, ct).ConfigureAwait(false) : null;
+        var extraTrackers = await ExtraTrackersAsync(ct).ConfigureAwait(false);
 
         await _gate.WaitAsync(ct).ConfigureAwait(false);
         try
         {
             ThrowIfDisposed();
             var hash = InfoHashHex(link.InfoHashes);
-            EnsureNotDuplicate(hash);
+            if (await MergeIntoDuplicateAsync(hash, link.AnnounceUrls ?? []).ConfigureAwait(false) is { } existingId)
+                return existingId;
 
             var id = AllocateId();
             var record = new TorrentRecord
@@ -193,6 +195,7 @@ public sealed class TorrentService : ITorrentService, IAsyncDisposable
             try
             {
                 await AddEntryToEngineAsync(entry).ConfigureAwait(false);
+                await ApplyAddTimeTrackersAsync(entry, extraTrackers).ConfigureAwait(false);
             }
             catch
             {
@@ -219,13 +222,15 @@ public sealed class TorrentService : ITorrentService, IAsyncDisposable
 
         var parsed = await MTorrent.LoadAsync(torrentPath).ConfigureAwait(false);
         await EnsureInitializedAsync(ct).ConfigureAwait(false);
+        var extraTrackers = await ExtraTrackersAsync(ct).ConfigureAwait(false);
 
         await _gate.WaitAsync(ct).ConfigureAwait(false);
         try
         {
             ThrowIfDisposed();
             var hash = InfoHashHex(parsed.InfoHashes);
-            EnsureNotDuplicate(hash);
+            if (await MergeIntoDuplicateAsync(hash, parsed.AnnounceUrls.SelectMany(t => t)).ConfigureAwait(false) is { } existingId)
+                return existingId;
 
             var id = AllocateId();
             var fileName = $"{id}.torrent";
@@ -247,6 +252,7 @@ public sealed class TorrentService : ITorrentService, IAsyncDisposable
             try
             {
                 await AddEntryToEngineAsync(entry).ConfigureAwait(false);
+                await ApplyAddTimeTrackersAsync(entry, extraTrackers).ConfigureAwait(false);
             }
             catch
             {
@@ -715,6 +721,104 @@ public sealed class TorrentService : ITorrentService, IAsyncDisposable
     private long AllocateId()
     {
         lock (_sync) return _nextId++;
+    }
+
+    /// <summary>Public trackers added to new torrents when "Use default trackers" is on.</summary>
+    public static readonly IReadOnlyList<string> DefaultTrackers =
+    [
+        "udp://tracker.opentrackr.org:1337/announce",
+        "udp://open.stealth.si:80/announce",
+        "udp://tracker.torrent.eu.org:451/announce",
+        "udp://exodus.desync.com:6969/announce",
+        "udp://tracker.openbittorrent.com:6969/announce",
+        "udp://open.demonii.com:1337/announce",
+        "https://tracker.tamersunion.org/announce",
+    ];
+
+    private static readonly HttpClient TrackerListClient = new() { Timeout = TimeSpan.FromSeconds(10) };
+    private static readonly TimeSpan TrackerListLifetime = TimeSpan.FromHours(6);
+    private (string Url, DateTimeOffset At, List<string> Trackers)? _trackerList;
+
+    private static bool IsTrackerUrl(string? url) =>
+        Uri.TryCreate(url?.Trim(), UriKind.Absolute, out var uri) &&
+        (uri.Scheme == Uri.UriSchemeHttp || uri.Scheme == Uri.UriSchemeHttps || uri.Scheme == "udp");
+
+    /// <summary>Trackers added to every new torrent: the default list and the list fetched from "dturl" (cached).</summary>
+    private async Task<List<string>> ExtraTrackersAsync(CancellationToken ct)
+    {
+        var list = new List<string>();
+        if (_config.UseDefaultTrackers) list.AddRange(DefaultTrackers);
+
+        var url = _config.TrackerListUrl;
+        if (Uri.TryCreate(url, UriKind.Absolute, out var source) && source.Scheme is "http" or "https")
+        {
+            if (_trackerList is { } cached && cached.Url == url && DateTimeOffset.UtcNow - cached.At < TrackerListLifetime)
+            {
+                list.AddRange(cached.Trackers);
+            }
+            else
+            {
+                try
+                {
+                    var text = await TrackerListClient.GetStringAsync(source, ct).ConfigureAwait(false);
+                    var fetched = text.Split('\n').Select(l => l.Trim()).Where(IsTrackerUrl).Take(500).ToList();
+                    _trackerList = (url, DateTimeOffset.UtcNow, fetched);
+                    list.AddRange(fetched);
+                }
+                catch (Exception ex) when (ex is HttpRequestException or TaskCanceledException)
+                {
+                    // An unreachable list never blocks adding the torrent.
+                }
+            }
+        }
+
+        return list.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+    }
+
+    private static List<string> CurrentTrackers(Entry entry) =>
+        entry.Manager is { } m
+            ? m.TrackerManager.Tiers.SelectMany(t => t.Trackers).Select(t => t.Uri.ToString()).ToList()
+            : entry.Record.Trackers ?? [];
+
+    /// <summary>Adds the extra trackers and, with "Always contact all trackers", gives each tracker its own tier.</summary>
+    private async Task ApplyAddTimeTrackersAsync(Entry entry, IReadOnlyList<string> extra)
+    {
+        if (entry.Manager is not { } manager) return;
+        var all = CurrentTrackers(entry).Concat(extra).Where(IsTrackerUrl).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        if (extra.Count > 0)
+        {
+            entry.Record.Trackers = all;
+            await ApplyTrackersAsync(manager, all).ConfigureAwait(false);
+        }
+
+        // MonoTorrent announces to one tracker per tier; one tracker per tier means every tracker is contacted.
+        if (_config.AlwaysContactAllTrackers && manager.TrackerManager.Tiers.Any(t => t.Trackers.Count > 1))
+        {
+            foreach (var tracker in manager.TrackerManager.Tiers.SelectMany(t => t.Trackers).ToList())
+                await manager.TrackerManager.RemoveTrackerAsync(tracker).ConfigureAwait(false);
+            foreach (var url in all)
+                await manager.TrackerManager.AddTrackerAsync(new Uri(url)).ConfigureAwait(false);
+        }
+    }
+
+    /// <summary>
+    /// A torrent that is already in the list: with "Automatically add trackers to duplicate torrents" its trackers are
+    /// merged into the existing torrent and that id is returned; otherwise the add fails as before. Null = not a duplicate.
+    /// </summary>
+    private async Task<long?> MergeIntoDuplicateAsync(string infoHash, IEnumerable<string> trackers)
+    {
+        Entry? existing;
+        lock (_sync)
+            existing = _entries.Values.FirstOrDefault(e => string.Equals(e.Record.InfoHash, infoHash, StringComparison.OrdinalIgnoreCase));
+        if (existing is null) return null;
+        if (!_config.AddTrackersToDuplicates) EnsureNotDuplicate(infoHash);
+
+        var merged = CurrentTrackers(existing).Concat(trackers).Where(IsTrackerUrl)
+            .Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+        existing.Record.Trackers = merged;
+        if (existing.Manager is { } manager) await ApplyTrackersAsync(manager, merged).ConfigureAwait(false);
+        SaveRegistry();
+        return existing.Record.Id;
     }
 
     private void EnsureNotDuplicate(string infoHash)
