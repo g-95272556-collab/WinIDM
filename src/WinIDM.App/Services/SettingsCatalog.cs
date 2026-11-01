@@ -208,13 +208,34 @@ public static class SettingsCatalog
         C("webview_dark_mode", "Dark mode in the browser", "Follow theme",
           new[] { "Follow theme", "Always on", "Always off" }, CatBrowser, BP);
         B("webview_debugging_enabled", "Enable WebView debugging", false, CatBrowser, BP);
+        I("text_size", "Default page zoom (%)", 100, CatBrowser, BP);
+        C("rendering_mode", "Rendering mode", "Normal",
+          new[] { "Normal", "Inverted", "Grayscale", "Inverted grayscale", "Increase contrast" }, CatBrowser, BP);
+        B("stupm", "Show the target URL of a link in the status bar", true, CatBrowser, BP);
+        I("tumnoc", "Maximum characters of the target URL shown", 128, CatBrowser, BP);
+        B("enable_selection_copy_paste", "Force text selection, copy and paste on pages that block it", false, CatBrowser, BU);
+        B("capture_page_title", "Use the web page title as the file name of captured media", true, CatBrowser, BU);
+        B("idm_pref_disable_subtitle_capture", "Disable automatic subtitle capture in the browser", false, CatBrowser, BU);
+        B("idm_pref_download_subtitles_videos_folder", "Download subtitles into the videos folder", true, CatBrowser, BU);
+        T("wbpsf", "Folder for saved web pages (empty = choose each time)", "", CatBrowser, BU);
+        B("uwtaffsp", "Use the page title as the file name when saving a page", true, CatBrowser, BU);
+        T("browser.translate_to", "Translate pages to (language code, for example en, ms)", "en", CatBrowser, BU);
         B("browser.adblock", "Block ads and trackers", true, CatBrowser, BPr);
         B("block_webrtc_leak", "Prevent WebRTC leaks", false, CatBrowser, BPr);
         B("issle", "Ignore SSL errors (not recommended)", false, CatBrowser, BPr);
         B("do_not_track", "Send the DNT: 1 header", false, CatBrowser, BPr);
         B("save_data", "Send the Save-Data header", false, CatBrowser, BPr);
         B("third_party", "Block third-party cookies (default: blocked)", true, CatBrowser, BPr);
-        B("allow_cookies", "Enable cookies", true, CatBrowser, BPr, SettingStatus.Pending);
+        B("allow_cookies", "Enable cookies", true, CatBrowser, BPr);
+        B("incognito_cookies", "Enable cookies in incognito mode", true, CatBrowser, BPr);
+        B("wbsbe", "Enable safe browsing (Microsoft Defender SmartScreen)", true, CatBrowser, BPr);
+        var permissionChoices = new[] { "Always Ask", "Allow", "Block" };
+        C("wbcmara", "Camera", "Always Ask", permissionChoices, CatBrowser, BPr);
+        C("wbmpara", "Microphone", "Always Ask", permissionChoices, CatBrowser, BPr);
+        C("wbloara", "Location", "Always Ask", permissionChoices, CatBrowser, BPr);
+        C("wbcmaraig", "Camera (incognito)", "Block", permissionChoices, CatBrowser, BPr);
+        C("wbmparaig", "Microphone (incognito)", "Block", permissionChoices, CatBrowser, BPr);
+        C("wbloaraig", "Location (incognito)", "Block", permissionChoices, CatBrowser, BPr);
         B("enable_secure_incognito_mode", "Secure incognito mode (block screenshots)", false, CatBrowser, BPr);
         B("clear_cache_exit", "Clear the cache on exit", false, CatBrowser, BPr);
         B("clear_history_exit", "Clear history on exit", false, CatBrowser, BPr);
@@ -225,6 +246,9 @@ public static class SettingsCatalog
         B("allow_new_window", "Allow sites to open new tabs", true, CatBrowser, BT);
         C("popup_handling", "Popup and new tab handling", "Ask", new[] { "Ask", "Allow", "Block" }, CatBrowser, BT);
         B("open_new_tabs_background", "Open new tabs in the background", false, CatBrowser, BT);
+        B("ask_new_tabs_open", "Ask before opening new tabs", false, CatBrowser, BT);
+        B("show_tab_closed", "Show a message with Undo when a tab is closed", false, CatBrowser, BT);
+        I("tab_closed_snackbar_duration_ms", "Tab closed message duration (ms)", 4000, CatBrowser, BT);
 
         // --- Internal keys (not shown in Settings) ---
         const string Hid = "Internal";

@@ -60,7 +60,9 @@ public partial class BrowserWindow
             return;
         }
 
-        var title = string.IsNullOrWhiteSpace(core.DocumentTitle) ? "page" : core.DocumentTitle;
+        // IDM+ "If possible use webpage title as file name while saving webpages" (uwtaffsp).
+        var title = string.IsNullOrWhiteSpace(core.DocumentTitle) || !_c.Settings.Bool(Keys.SavePageTitleName)
+            ? "page" : core.DocumentTitle;
         var invalid = Path.GetInvalidFileNameChars();
         var baseName = new string(title.Select(ch => invalid.Contains(ch) ? '_' : ch).Take(120).ToArray());
         var dlg = new Microsoft.Win32.SaveFileDialog
@@ -69,6 +71,9 @@ public partial class BrowserWindow
             Filter = "MHTML web archive (*.mhtml)|*.mhtml|PDF document (*.pdf)|*.pdf",
             FileName = baseName + ".mhtml",
         };
+        // IDM+ "Set directory for saving web pages" (wbpsf); empty = the dialog's own last folder.
+        var folder = _c.Settings.Text(Keys.SavedPagesFolder).Trim();
+        if (folder.Length > 0 && Directory.Exists(folder)) dlg.InitialDirectory = folder;
         if (dlg.ShowDialog(this) != true) return;
 
         var isPdf = dlg.FileName.EndsWith(".pdf", StringComparison.OrdinalIgnoreCase);

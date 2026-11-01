@@ -253,6 +253,7 @@ public partial class BrowserWindow : Window
     private void CloseTab(BrowserTabViewModel tab)
     {
         int idx = _tabs.IndexOf(tab);
+        if (!_incognito) RememberClosedTab(tab);
         _tabs.Remove(tab);
         ReleaseScripts(tab);
         if (tab.View is { } wv)
@@ -317,6 +318,7 @@ public partial class BrowserWindow : Window
         WireScripts(tab, core);
         WireBrowserTools(core);
         await WirePasswordAssistAsync(tab, core);
+        await WireExtrasAsync(tab, core);
     }
 
     private void ApplyColorScheme(CoreWebView2 core)
@@ -336,7 +338,7 @@ public partial class BrowserWindow : Window
     {
         if (!Uri.TryCreate(e.Uri, UriKind.Absolute, out var u)) return;
 
-        if (u.Scheme is "http" or "https" or "about" or "data" or "blob")
+        if (u.Scheme is "http" or "https" or "about" or "data" or "blob" or "view-source")
         {
             tab.IsLoading = true;
             if (e.Uri != "about:blank") tab.IsStartPage = false;
@@ -489,7 +491,11 @@ public partial class BrowserWindow : Window
             // A 206 reply's Content-Length is only the chunk; the full size is the total in "bytes a-b/TOTAL".
             long? length = TotalFromContentRange(HeaderOrEmpty(headers, "Content-Range"))
                            ?? (long.TryParse(HeaderOrEmpty(headers, "Content-Length"), out var len) ? len : null);
-            var media = _c.Media.Inspect(e.Request.Uri, mime, length, tab.View?.Source?.ToString());
+            var page = tab.View?.Source?.ToString();
+            var media = _c.Media.Inspect(e.Request.Uri, mime, length, page);
+            // IDM+ automatic subtitle capture (03a: idm_pref_disable_subtitle_capture turns it off).
+            if (media is null && !_c.Settings.Bool(Keys.DisableSubtitleCapture) && MediaCapture.IsSubtitle(e.Request.Uri, mime))
+                media = new DetectedMedia(e.Request.Uri, page, null, mime, length, DownloadKind.Http, MediaCapture.SubtitleQuality);
             if (media is null) return;
 
             // A Content-Disposition name is the best file name the server can offer, so keep it with the entry.
@@ -529,6 +535,12 @@ public partial class BrowserWindow : Window
                 $"The site wants to open a new tab:\n{UrlHelper.Redact(e.Uri)}\n\nAllow? This choice will be remembered for this site.",
                 "New tab", MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
             if (pageOrigin.Length > 0) _c.SitePermissions.Set(pageOrigin, PopupKind, allowed);
+        }
+        // IDM+ "Ask before opening new tabs": a question for every new tab, on top of the popup policy.
+        if (allowed && mode != "Ask" && _c.Settings.Bool(Keys.AskNewTabs))
+        {
+            allowed = MessageBox.Show(this, $"Open a new tab?\n{UrlHelper.Redact(e.Uri)}", "New tab",
+                MessageBoxButton.YesNo, MessageBoxImage.Question) == MessageBoxResult.Yes;
         }
         if (!allowed)
         {
@@ -585,6 +597,10 @@ public partial class BrowserWindow : Window
         if (saved is bool remembered)
         {
             allow = remembered;
+        }
+        else if (DefaultPermission(e.PermissionKind) is bool policy)
+        {
+            allow = policy; // Settings > Browser: Allow or Block without asking
         }
         else
         {
@@ -682,6 +698,11 @@ public partial class BrowserWindow : Window
 
     private void Window_KeyDown(object sender, KeyEventArgs e)
     {
+        if (HandleExtraKeys(e))
+        {
+            e.Handled = true;
+            return;
+        }
         var ctrl = Keyboard.Modifiers.HasFlag(ModifierKeys.Control);
         if (ctrl && e.Key == Key.T) { NewTab_Click(this, e); e.Handled = true; }
         else if (ctrl && e.Key == Key.W && _current is not null) { CloseTab(_current); e.Handled = true; }
@@ -753,8 +774,13 @@ public partial class BrowserWindow : Window
         return new DownloadRequest
         {
             Url = url,
-            FileName = MediaCapture.SuggestedFileName(url, tab?.Title, media.Title, media.MimeType, sourceFileName: media.SourceFileName),
-            SaveDirectory = _c.DefaultDownloadFolder(),
+            // "Use webpage title as file name" (03a: capture_page_title); off = the URL or media name decides.
+            FileName = MediaCapture.SuggestedFileName(url, _c.Settings.Bool(Keys.CapturePageTitle) ? tab?.Title : null,
+                media.Title, media.MimeType, sourceFileName: media.SourceFileName),
+            // "Download subtitles inside the videos folder" (03a: idm_pref_download_subtitles_videos_folder).
+            SaveDirectory = media.Quality == MediaCapture.SubtitleQuality && _c.Settings.Bool(Keys.SubtitlesInVideoFolder)
+                ? WinIDM.Engine.DownloadCategories.GetSaveDirectory(_c.DefaultDownloadFolder(), WinIDM.Engine.DownloadCategories.Video)
+                : _c.DefaultDownloadFolder(),
             Referer = referer,
             UserAgent = core?.Settings.UserAgent,
             CookieHeader = core is not null ? await GetCookieHeaderAsync(core, url) : null,
@@ -813,7 +839,9 @@ public partial class BrowserWindow : Window
         var items = _bookmarks.All.Select(b => new PickItem(b.Title, b.Url, b.Added.LocalDateTime.ToString("yyyy-MM-dd HH:mm")));
         new ListPickerWindow("Bookmarks", "Double-click to open. Select an item and press Remove to delete it.", items,
             open: url => { if (_current is not null) Navigate(_current, url); },
-            remove: url => _bookmarks.Remove(url)) { Owner = this }.Show();
+            remove: url => _bookmarks.Remove(url),
+            // IDM+ "Delete all bookmarks"; the list window asks before clearing.
+            clear: () => { _bookmarks.Restore([], overwrite: true); RefreshChrome(); }) { Owner = this }.Show();
     }
 
     private void History_Click(object sender, RoutedEventArgs e)

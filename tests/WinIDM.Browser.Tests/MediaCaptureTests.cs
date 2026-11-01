@@ -9,6 +9,21 @@ public class MediaCaptureTests
         "&mime=video%2Fmp4&ns=xyz&sparams=expire%2Cei%2Cip%2Cid%2Citag%2Csource%2Cmime" +
         "&sig=AFi7abcdef&n=Mn8vQ2&range=0-1048575&rn=4&rbuf=65536";
 
+    /// <summary>IDM+ automatic subtitle capture: by MIME type or by a subtitle extension; ordinary text is not a subtitle.</summary>
+    [Theory]
+    [InlineData("https://cdn.example.com/s/en.vtt?sig=1", null, true)]
+    [InlineData("https://cdn.example.com/track", "text/vtt; charset=utf-8", true)]
+    [InlineData("https://cdn.example.com/movie.SRT", "application/octet-stream", true)]
+    [InlineData("https://cdn.example.com/sub", "application/x-subrip", true)]
+    [InlineData("https://cdn.example.com/readme.txt", "text/plain", false)]
+    [InlineData("https://cdn.example.com/page", "text/html", false)]
+    public void IsSubtitle_ByMimeOrExtension(string url, string? mime, bool expected) =>
+        Assert.Equal(expected, MediaCapture.IsSubtitle(url, mime));
+
+    [Fact]
+    public void SubtitleMime_GivesSubtitleExtension() =>
+        Assert.EndsWith(".vtt", MediaCapture.SuggestedFileName("https://cdn.example.com/track", "Film", null, "text/vtt"));
+
     [Fact]
     public void NormalizeForDownload_RemovesOnlyRangeParameters()
     {

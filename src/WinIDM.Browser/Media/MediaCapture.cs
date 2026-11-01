@@ -48,6 +48,12 @@ public static class MediaCapture
             ["audio/x-wav"] = "wav",
             ["audio/wave"] = "wav",
             ["audio/x-m4a"] = "m4a",
+            ["text/vtt"] = "vtt",
+            ["application/x-subrip"] = "srt",
+            ["text/srt"] = "srt",
+            ["text/x-ssa"] = "ssa",
+            ["text/x-ass"] = "ass",
+            ["application/ttml+xml"] = "ttml",
             ["video/x-flv"] = "flv",
             ["video/avi"] = "avi",
             ["video/x-msvideo"] = "avi",
@@ -207,6 +213,27 @@ public static class MediaCapture
             if (!string.IsNullOrWhiteSpace(value)) return value;
         }
         return null;
+    }
+
+    /// <summary>Quality label that marks a captured subtitle file in the media panel.</summary>
+    public const string SubtitleQuality = "Subtitle";
+
+    private static readonly string[] SubtitleMimes =
+        ["text/vtt", "application/x-subrip", "text/srt", "text/x-ssa", "text/x-ass", "application/ttml+xml", "application/x-dfxp"];
+
+    private static readonly string[] SubtitleExtensions = [".vtt", ".srt", ".ass", ".ssa", ".ttml", ".dfxp"];
+
+    /// <summary>
+    /// True for a subtitle file (IDM+ "automatic subtitle capture"): a subtitle MIME type or a subtitle extension in the
+    /// URL path. Subtitles are text, so the media detector itself never lists them.
+    /// </summary>
+    public static bool IsSubtitle(string url, string? mimeType)
+    {
+        var mime = mimeType?.Split(';')[0].Trim();
+        if (!string.IsNullOrEmpty(mime) && SubtitleMimes.Contains(mime, StringComparer.OrdinalIgnoreCase)) return true;
+        if (!Uri.TryCreate(url, UriKind.Absolute, out var uri)) return false;
+        var path = uri.AbsolutePath;
+        return SubtitleExtensions.Any(ext => path.EndsWith(ext, StringComparison.OrdinalIgnoreCase));
     }
 
     /// <summary>True when the URL is a YouTube media stream (used for diagnostics and UI hints).</summary>

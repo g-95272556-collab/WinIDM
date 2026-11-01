@@ -97,6 +97,26 @@ public static class Keys
     public const string AllowNewWindow = "allow_new_window";
     public const string PopupHandling = "popup_handling";
     public const string OpenTabsBackground = "open_new_tabs_background";
+    public const string AskNewTabs = "ask_new_tabs_open";
+    public const string DisableSubtitleCapture = "idm_pref_disable_subtitle_capture";
+    public const string SavedPagesFolder = "wbpsf";
+    public const string SavePageTitleName = "uwtaffsp";
+    public const string SubtitlesInVideoFolder = "idm_pref_download_subtitles_videos_folder";
+    public const string TabClosedUndo = "show_tab_closed";
+    public const string TabClosedDurationMs = "tab_closed_snackbar_duration_ms";
+    public const string PageZoom = "text_size";
+    public const string RenderingMode = "rendering_mode";
+    public const string ShowTargetUrl = "stupm";
+    public const string TargetUrlMaxChars = "tumnoc";
+    public const string ForceSelection = "enable_selection_copy_paste";
+    public const string CapturePageTitle = "capture_page_title";
+    public const string TranslateTo = "browser.translate_to";
+    public const string AllowCookies = "allow_cookies";
+    public const string IncognitoCookies = "incognito_cookies";
+    public const string SafeBrowsing = "wbsbe";
+    public const string CameraPolicy = "wbcmara";
+    public const string MicrophonePolicy = "wbmpara";
+    public const string LocationPolicy = "wbloara";
 
     // Scheduler (shown in the Scheduler tab)
     public const string SchedEnabled = "scheduler.enabled";

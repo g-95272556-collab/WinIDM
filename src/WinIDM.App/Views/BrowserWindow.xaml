@@ -17,7 +17,7 @@
 
     <DockPanel>
         <!-- Tab strip -->
-        <DockPanel DockPanel.Dock="Top" Background="{DynamicResource SurfaceBrush}" Margin="4,4,4,0">
+        <DockPanel x:Name="TabStripBar" DockPanel.Dock="Top" Background="{DynamicResource SurfaceBrush}" Margin="4,4,4,0">
             <Button DockPanel.Dock="Right" Content="+" ToolTip="New tab (Ctrl+T)" Width="30" Margin="4,0,0,0" Click="NewTab_Click"/>
             <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
                 <ItemsControl x:Name="TabStrip">
@@ -56,7 +56,7 @@
         </DockPanel>
 
         <!-- Navigation and address bar -->
-        <DockPanel DockPanel.Dock="Top" Margin="4,6,4,4">
+        <DockPanel x:Name="NavBar" DockPanel.Dock="Top" Margin="4,6,4,4">
             <Button DockPanel.Dock="Left" Content="&#x2190;" ToolTip="Back" Style="{StaticResource NavButton}" Click="Back_Click"/>
             <Button DockPanel.Dock="Left" Content="&#x2192;" ToolTip="Forward" Style="{StaticResource NavButton}" Click="Forward_Click"/>
             <Button DockPanel.Dock="Left" Content="&#x21BB;" ToolTip="Reload (F5)" Style="{StaticResource NavButton}" Click="Reload_Click"/>
@@ -65,8 +65,20 @@
             <Button DockPanel.Dock="Right" Content="&#x22EF;" ToolTip="Menu" Style="{StaticResource NavButton}" Margin="6,0,0,0" Click="Menu_Click">
                 <Button.ContextMenu>
                     <ContextMenu x:Name="MainMenu" Opened="MainMenu_Opened">
-                        <MenuItem Header="New tab" Click="NewTab_Click"/>
+                        <MenuItem Header="New tab" Click="NewTab_Click" InputGestureText="Ctrl+T"/>
                         <MenuItem Header="New incognito window" Click="NewIncognito_Click"/>
+                        <MenuItem Header="Reopen closed tab" Click="ReopenClosedTab_Click" InputGestureText="Ctrl+Shift+T"/>
+                        <Separator/>
+                        <MenuItem Header="Find in page…" Click="FindInPage_Click" InputGestureText="Ctrl+F"/>
+                        <MenuItem Header="Zoom">
+                            <MenuItem Header="Zoom in" Click="ZoomIn_Click" InputGestureText="Ctrl++"/>
+                            <MenuItem Header="Zoom out" Click="ZoomOut_Click" InputGestureText="Ctrl+-"/>
+                            <MenuItem Header="Reset zoom" Click="ZoomReset_Click" InputGestureText="Ctrl+0"/>
+                        </MenuItem>
+                        <MenuItem Header="Full screen" Click="FullScreen_Click" InputGestureText="F11"/>
+                        <MenuItem Header="Translate page" Click="Translate_Click"/>
+                        <MenuItem Header="View page source" Click="ViewSource_Click" InputGestureText="Ctrl+U"/>
+                        <MenuItem Header="Print…" Click="Print_Click" InputGestureText="Ctrl+P"/>
                         <Separator/>
                         <MenuItem Header="Bookmarks…" Click="Bookmarks_Click"/>
                         <MenuItem Header="History…" Click="History_Click"/>
@@ -112,9 +124,11 @@
         </DockPanel>
 
         <!-- Status bar -->
-        <Border DockPanel.Dock="Bottom" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
+        <Border x:Name="StatusBar" DockPanel.Dock="Bottom" Background="{DynamicResource SurfaceBrush}" BorderBrush="{DynamicResource BorderBrush}"
                 BorderThickness="0,1,0,0" Padding="8,3">
             <DockPanel>
+                <Button x:Name="UndoCloseButton" DockPanel.Dock="Right" Content="Undo" Padding="10,0" Margin="12,0,0,0"
+                        Visibility="Collapsed" Click="ReopenClosedTab_Click" ToolTip="Reopen the closed tab (Ctrl+Shift+T)"/>
                 <TextBlock x:Name="IncognitoLabel" Text="Incognito mode: history, bookmarks, and cookies are not saved" Visibility="Collapsed"
                            DockPanel.Dock="Right" Foreground="{DynamicResource AccentBrush}" Margin="12,0,0,0"/>
                 <TextBlock x:Name="StatusText" Style="{StaticResource Muted}" TextTrimming="CharacterEllipsis"/>
