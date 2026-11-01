@@ -243,6 +243,10 @@ public static class SettingsCatalog
         B("browser.fingerprint_protection", "Fingerprinting protection (canvas, WebGL, offline audio, CPU count; video and audio playback untouched)", true, CatBrowser, BPr);
         // Sites with the shields switched off (one host per line), edited from the Shields button in the browser.
         l.Add(new SettingDef("browser.shields_off_sites", "Sites with shields off", SettingKind.Text, "", CatBrowser, BPr, Visible: false));
+        // Side panel state, kept by the browser window itself.
+        l.Add(new SettingDef("browser.side_panel_open", "Side panel open", SettingKind.Bool, false, CatBrowser, BU, Visible: false));
+        l.Add(new SettingDef("browser.side_panel_provider", "Side panel provider", SettingKind.Text, "web:claude", CatBrowser, BU, Visible: false));
+        l.Add(new SettingDef("browser.side_panel_width", "Side panel width", SettingKind.Int, 420, CatBrowser, BU, Visible: false));
         B("third_party", "Block third-party cookies (default: blocked)", true, CatBrowser, BPr);
         B("allow_cookies", "Enable cookies", true, CatBrowser, BPr);
         B("incognito_cookies", "Enable cookies in incognito mode", true, CatBrowser, BPr);

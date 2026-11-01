@@ -46,7 +46,7 @@ public static class BrowserSearchEngines
     {
         var t = input.Trim();
         if (t.Length == 0) return "";
-        if (Uri.TryCreate(t, UriKind.Absolute, out var abs) && abs.Scheme is "http" or "https" or "about")
+        if (Uri.TryCreate(t, UriKind.Absolute, out var abs) && abs.Scheme is "http" or "https" or "about" or "chrome-extension")
             return t;
         if (t.Contains(' ') || !t.Contains('.'))
             return BuildSearchUrl(engineName, custom, t);

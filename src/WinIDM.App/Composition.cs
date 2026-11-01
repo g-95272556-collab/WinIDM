@@ -24,6 +24,12 @@ public sealed class Composition
     public string BookmarksPath => Path.Combine(DataDir, "bookmarks.json");
     public string HistoryPath => Path.Combine(DataDir, "history.json");
     public string UserScriptsPath => Path.Combine(DataDir, "userscripts.json");
+    public string ExtensionsDir => Path.Combine(DataDir, "Extensions");
+
+    private WinIDM.Browser.ExtensionStore? _extensions;
+
+    /// <summary>Browser extensions installed from the Chrome Web Store (created on first use).</summary>
+    public WinIDM.Browser.ExtensionStore Extensions => _extensions ??= new(ExtensionsDir, Http);
 
     public AppSettings Settings { get; private set; } = null!;
     public ISettingsStore RawSettings { get; private set; } = null!;

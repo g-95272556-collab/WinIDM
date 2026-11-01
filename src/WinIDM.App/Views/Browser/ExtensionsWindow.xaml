@@ -1,0 +1,86 @@
+<Window x:Class="WinIDM.App.Views.ExtensionsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Extensions"
+        Width="820" Height="560" MinWidth="640" MinHeight="420"
+        WindowStartupLocation="CenterOwner">
+    <DockPanel>
+        <!-- ================= Page header ================= -->
+        <Border DockPanel.Dock="Top" Height="56" Padding="20,0">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Grid Width="32" Height="32" VerticalAlignment="Center">
+                    <Border CornerRadius="9" Background="{DynamicResource AccentSoftBrush}"
+                            BorderBrush="{DynamicResource AccentSoftBorderBrush}" BorderThickness="1"/>
+                    <TextBlock Text="&#xEA86;" FontFamily="Segoe MDL2 Assets" FontSize="16"
+                               Foreground="{DynamicResource AccentBrush}"
+                               HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                </Grid>
+                <StackPanel Grid.Column="1" Margin="12,0,0,0" VerticalAlignment="Center">
+                    <TextBlock Text="Extensions" Style="{StaticResource Heading}"/>
+                    <TextBlock Style="{StaticResource Muted}" FontSize="12" Margin="0,1,0,0" TextTrimming="CharacterEllipsis"
+                               Text="From the Chrome Web Store, checked against the publisher's signature. Sign in inside each extension."/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ================= Install ================= -->
+        <Border DockPanel.Dock="Top" Style="{StaticResource Card}" Margin="20,0,20,12" Padding="14">
+            <StackPanel>
+                <TextBlock Text="Add from the Chrome Web Store" Style="{StaticResource SectionLabel}" Margin="0,0,0,8"/>
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Content="Install" Style="{StaticResource PrimaryButton}" Margin="8,0,0,0"
+                            Click="Install_Click"/>
+                    <TextBox x:Name="StoreInput" Padding="8,4" VerticalContentAlignment="Center"
+                             ToolTip="Paste a Chrome Web Store link or a 32-letter extension ID"/>
+                </DockPanel>
+                <StackPanel Orientation="Horizontal" Margin="0,10,0,0">
+                    <TextBlock Text="Official:" Style="{StaticResource Muted}" VerticalAlignment="Center" Margin="0,0,8,0"/>
+                    <Button Content="Claude (Anthropic)" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0"
+                            Tag="fcoeoabgfenejglbffodgkkbkcdhcgfn" Click="InstallOfficial_Click"/>
+                    <Button Content="ChatGPT (OpenAI)" Style="{StaticResource SecondaryButton}"
+                            Tag="hehggadaopoacecdllhhajmbjkdcmajg" Click="InstallOfficial_Click"/>
+                </StackPanel>
+            </StackPanel>
+        </Border>
+
+        <!-- ================= Footer actions ================= -->
+        <Border DockPanel.Dock="Bottom" Margin="20,12,20,16">
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="*"/>
+                    <ColumnDefinition Width="Auto"/>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0" x:Name="StatusText" Style="{StaticResource Muted}" TextWrapping="Wrap"
+                           VerticalAlignment="Center" Margin="0,0,16,0"/>
+                <StackPanel Grid.Column="1" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Center">
+                    <Button Content="Remove" Style="{StaticResource DangerButton}" Margin="0,0,16,0" Click="Remove_Click"/>
+                    <Button Content="Update" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" Click="Update_Click"/>
+                    <Button Content="Options" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0" Click="Options_Click"/>
+                    <Button x:Name="EnableButton" Content="Disable" Style="{StaticResource SecondaryButton}" Margin="0,0,8,0"
+                            Click="ToggleEnabled_Click"/>
+                    <Button Content="Open in side panel" Style="{StaticResource PrimaryButton}" Click="OpenInPanel_Click"/>
+                </StackPanel>
+            </Grid>
+        </Border>
+
+        <!-- ================= Installed ================= -->
+        <Border Style="{StaticResource Card}" Margin="20,0,20,0" Padding="14">
+            <Border Style="{StaticResource SoftCard}" Padding="6">
+                <ListView x:Name="ExtensionList" SelectionMode="Single" SelectionChanged="ExtensionList_SelectionChanged">
+                    <ListView.View>
+                        <GridView>
+                            <GridViewColumn Header="Extension" DisplayMemberBinding="{Binding Name}" Width="170"/>
+                            <GridViewColumn Header="Version" DisplayMemberBinding="{Binding Version}" Width="110"/>
+                            <GridViewColumn Header="State" DisplayMemberBinding="{Binding State}" Width="80"/>
+                            <GridViewColumn Header="Can" DisplayMemberBinding="{Binding Access}" Width="360"/>
+                        </GridView>
+                    </ListView.View>
+                </ListView>
+            </Border>
+        </Border>
+    </DockPanel>
+</Window>

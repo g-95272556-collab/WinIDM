@@ -91,6 +91,7 @@ public partial class BrowserWindow : Window
         }
 
         _ = RunDailyScriptUpdatesAsync();
+        InitSidePanel();
 
         var restore = !_incognito && _c.Settings.Bool(Keys.RestoreTabs)
             ? SavedTabs.Parse(_c.Settings.Text(Keys.SavedTabs))
@@ -106,10 +107,25 @@ public partial class BrowserWindow : Window
             SelectTab(_tabs[0]);
     }
 
-    private Task<CoreWebView2Environment> CreateEnvironmentAsync()
+    private async Task<CoreWebView2Environment> CreateEnvironmentAsync()
     {
+        // Extensions run in the normal profile only; an incognito window starts without them.
+        if (!_incognito)
+        {
+            try
+            {
+                var withExtensions = new CoreWebView2EnvironmentOptions(BuildBrowserArguments()) { AreBrowserExtensionsEnabled = true };
+                var env = await CoreWebView2Environment.CreateAsync(null, _profileDir, withExtensions);
+                _extensionsEnabled = true;
+                return env;
+            }
+            catch (Exception ex) when (ex is ArgumentException or System.Runtime.InteropServices.COMException or NotImplementedException)
+            {
+                AppLog.Error("WebView2 extensions", ex);
+            }
+        }
         var options = new CoreWebView2EnvironmentOptions(BuildBrowserArguments());
-        return CoreWebView2Environment.CreateAsync(null, _profileDir, options);
+        return await CoreWebView2Environment.CreateAsync(null, _profileDir, options);
     }
 
     /// <summary>Chromium arguments: manual proxy when enabled. The proxy password is not used here.</summary>
@@ -196,7 +212,10 @@ public partial class BrowserWindow : Window
 
     // ---------- Tab ----------
 
-    private async Task<BrowserTabViewModel> NewTabAsync(string? url, bool select = true)
+    private Task<BrowserTabViewModel> NewTabAsync(string? url, bool select = true) => NewTabAsync(url, select, blank: false);
+
+    /// <param name="blank">Leave the new tab un-navigated (it becomes the target of a window request).</param>
+    private async Task<BrowserTabViewModel> NewTabAsync(string? url, bool select, bool blank)
     {
         var tab = new BrowserTabViewModel();
         var wv = new WebView2 { Visibility = Visibility.Collapsed };
@@ -218,6 +237,12 @@ public partial class BrowserWindow : Window
         }
 
         await WireCoreAsync(tab, wv.CoreWebView2);
+        if (blank)
+        {
+            tab.IsStartPage = false;
+            _navigatedTabs.Add(tab);
+            return tab;
+        }
         // The user may already have typed an address while the tab was being set up (Go works once the core exists).
         if (url is null) { if (!_navigatedTabs.Contains(tab)) ShowStartPage(tab); }
         else Navigate(tab, url);
@@ -290,6 +315,7 @@ public partial class BrowserWindow : Window
     {
         var s = core.Settings;
         if (_defaultUserAgent.Length == 0) _defaultUserAgent = s.UserAgent;
+        _ = SyncExtensionsAsync(core);
         s.IsScriptEnabled = _c.Settings.Bool(Keys.BrowserJs);
         s.AreDevToolsEnabled = _c.Settings.Bool(Keys.DevTools);
         s.IsPasswordAutosaveEnabled = false;
@@ -347,7 +373,8 @@ public partial class BrowserWindow : Window
 
         if (TryRewriteNavigation(tab, e)) return;
 
-        if (u.Scheme is "http" or "https" or "about" or "data" or "blob" or "view-source")
+        if (u.Scheme is "http" or "https" or "about" or "data" or "blob" or "view-source"
+            || u.Scheme == "chrome-extension" && ExtensionsAvailable)
         {
             tab.IsLoading = true;
             if (e.Uri != "about:blank") tab.IsStartPage = false;
@@ -534,6 +561,11 @@ public partial class BrowserWindow : Window
 
     private void OnNewWindowRequested(BrowserTabViewModel tab, CoreWebView2NewWindowRequestedEventArgs e)
     {
+        if (IsExtensionWindowRequest(e, tab))
+        {
+            _ = OpenExtensionTabAsync(e);
+            return;
+        }
         e.Handled = true;
         var mode = _c.Settings.Text(Keys.PopupHandling);
         var pageOrigin = OriginOf(tab.View?.Source?.ToString() ?? "");

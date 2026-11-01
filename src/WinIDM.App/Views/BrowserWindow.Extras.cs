@@ -246,6 +246,7 @@ public partial class BrowserWindow
             case Key.OemMinus or Key.Subtract when ctrl: Zoom(-0.1); return true;
             case Key.D0 or Key.NumPad0 when ctrl: ZoomReset_Click(this, e); return true;
             case Key.F11: SetFullScreen(!_fullScreen); return true;
+            case Key.E when ctrl && !shift: SetSidePanelOpen(!SidePanelIsOpen); return true;
             case Key.Escape when _fullScreen: SetFullScreen(false); return true;
             default: return false;
         }

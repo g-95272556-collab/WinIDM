@@ -96,6 +96,7 @@
                         <MenuItem Header="Edit home page shortcuts…" Click="OpenShortcuts_Click"/>
                         <MenuItem x:Name="SearchEngineMenu" Header="Search engine"/>
                         <Separator/>
+                        <MenuItem Header="Extensions…" Click="OpenExtensions_Click"/>
                         <MenuItem Header="Ad blocker and filters…" Click="OpenBlocker_Click"/>
                         <MenuItem x:Name="SiteAdblockItem" Header="Ad blocker for this site" IsCheckable="True" Click="SiteAdblock_Click"/>
                         <MenuItem Header="Hide element (pick on page)…" Click="StartElementPicker_Click"/>
@@ -114,6 +115,8 @@
                     </ContextMenu>
                 </Button.ContextMenu>
             </Button>
+            <Button DockPanel.Dock="Right" x:Name="SidePanelButton" Content="Side panel" ToolTip="AI providers and extensions (Ctrl+E)"
+                    Padding="8,2" Margin="6,0,0,0" Click="ToggleSidePanel_Click"/>
             <Button DockPanel.Dock="Right" x:Name="ShieldsButton" Content="Shields" ToolTip="Privacy shields for this site"
                     Padding="8,2" Margin="6,0,0,0" Click="Menu_Click">
                 <Button.ContextMenu>
@@ -161,13 +164,40 @@
             </DockPanel>
         </Border>
 
-        <!-- Content: WebView2 and media panel -->
+        <!-- Content: WebView2, media panel and the side panel (AI providers and extensions) -->
         <Grid>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="*"/>
                 <!-- Auto: the web view gets the full width while the media panel is collapsed. -->
                 <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="Auto"/>
+                <!-- Side panel width is set in code (0 while closed) so the splitter can resize it. -->
+                <ColumnDefinition x:Name="SidePanelColumn" Width="0" MinWidth="0"/>
             </Grid.ColumnDefinitions>
+
+            <GridSplitter x:Name="SidePanelSplitter" Grid.Column="2" Width="5" Visibility="Collapsed"
+                          HorizontalAlignment="Stretch" ResizeBehavior="PreviousAndNext" ResizeDirection="Columns"
+                          Background="{DynamicResource BorderBrush}" DragCompleted="SidePanelSplitter_DragCompleted"/>
+
+            <Border Grid.Column="3" x:Name="SidePanel" Visibility="Collapsed" Background="{DynamicResource SurfaceBrush}">
+                <DockPanel>
+                    <DockPanel DockPanel.Dock="Top" Margin="6,6,6,4">
+                        <Button DockPanel.Dock="Right" Content="&#x2715;" ToolTip="Close the side panel (Ctrl+E)"
+                                Style="{StaticResource NavButton}" Click="ToggleSidePanel_Click"/>
+                        <Button DockPanel.Dock="Right" x:Name="SidePanelOpenTabButton" Content="&#x29C9;"
+                                ToolTip="Open this provider in a browser tab" Style="{StaticResource NavButton}"
+                                Click="SidePanelOpenInTab_Click"/>
+                        <Button DockPanel.Dock="Right" Content="&#x21BB;" ToolTip="Reload the side panel"
+                                Style="{StaticResource NavButton}" Click="SidePanelReload_Click"/>
+                        <ComboBox x:Name="SidePanelProviderBox" DisplayMemberPath="Title" Margin="0,0,4,0"
+                                  SelectionChanged="SidePanelProvider_SelectionChanged"
+                                  ToolTip="Choose an AI provider or an installed extension"/>
+                    </DockPanel>
+                    <TextBlock x:Name="SidePanelStatus" DockPanel.Dock="Bottom" Style="{StaticResource Muted}" FontSize="11"
+                               Margin="8,2,8,4" TextTrimming="CharacterEllipsis"/>
+                    <Grid x:Name="SidePanelHost"/>
+                </DockPanel>
+            </Border>
 
             <Grid x:Name="ViewHost" Grid.Column="0" Background="{DynamicResource WindowBackgroundBrush}"/>
 

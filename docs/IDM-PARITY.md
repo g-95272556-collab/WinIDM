@@ -87,6 +87,22 @@ them all off for one site (in incognito that choice is kept in memory only).
 | Scriptlets (`+js`), procedural filters, `redirect=`, `removeparam` from lists, cookie-banner lists | Gap | Planned as the second stage |
 | Tor windows, Rewards/BAT, Sync, Wallet, Leo | Not copied | Out of scope; Tor works through the Orbot/SOCKS5 proxy |
 
+## Side panel and extensions (beyond IDM+)
+
+The **Side panel** button (Ctrl+E) opens a resizable panel next to the page with a provider list:
+
+| Provider | How it works | Sign-in |
+|---|---|---|
+| Claude, ChatGPT (official extensions) | Installed from the Chrome Web Store (menu ⋯ > Extensions…, or the "Install the … extension" entries in the list). The CRX3 package is verified against the publisher's signature and the Web Store ID is kept | In the extension's own panel; its sign-in page opens as a WinIDM tab and the extension sees that tab |
+| Claude, ChatGPT, DeepSeek, Kimi (web) | The provider's own site in the panel | On the provider's site; Google sign-in may be refused inside an embedded browser |
+
+WinIDM never handles provider tokens. Extensions run in normal windows only (not incognito) and share the window's
+profile, so a sign-in in a tab is seen by the panel. Tabs an extension opens are recognised by their source (an
+extension page, the WinIDM start page, or the 30 seconds after an install) because WebView2 reports them like a
+link click. Limits: no Chrome toolbar (popups are shown in the panel instead), no automatic updates (Update button),
+no Chrome sign-in or sync; whether every agent feature of an extension works in WebView2 is not verified without
+a signed-in paid account.
+
 ## Proxy and torrent
 
 | IDM+ function | Status | Notes |
