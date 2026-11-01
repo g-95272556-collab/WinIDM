@@ -772,15 +772,12 @@ public partial class BrowserWindow : Window
         core.Reload();
     }
 
-    private void CopyLink_Click(object sender, RoutedEventArgs e)
+    private async void CopyLink_Click(object sender, RoutedEventArgs e)
     {
         var url = _current?.Address;
         if (string.IsNullOrEmpty(url)) return;
-        // CPFROM1DM marker: the clipboard monitor does not offer downloads for links copied from here.
-        var data = new DataObject();
-        data.SetText(url);
-        data.SetData("CPFROM1DM", true);
-        Clipboard.SetDataObject(data, true);
+        if (!await ClipboardWriter.TryCopyLinkAsync(url))
+            _shell.ShowMessage("Copy link", "The clipboard is in use by another app. Try again.", error: true);
     }
 
     private void Bookmark_Click(object sender, RoutedEventArgs e)

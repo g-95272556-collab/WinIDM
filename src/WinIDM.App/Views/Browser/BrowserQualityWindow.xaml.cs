@@ -53,19 +53,12 @@ public partial class BrowserQualityWindow : Window
         }
     }
 
-    private void Copy_Click(object sender, RoutedEventArgs e)
+    private async void Copy_Click(object sender, RoutedEventArgs e)
     {
         if (Selected is not { } row) return;
-        try
-        {
-            Clipboard.SetText(row.Media.Url);
-            StatusText.Text = "Link copied.";
-        }
-        catch (System.Runtime.InteropServices.ExternalException ex)
-        {
-            AppLog.Error("Copy quality link", ex);
-            StatusText.Text = "Clipboard is busy. Try again.";
-        }
+        StatusText.Text = await ClipboardWriter.TryCopyLinkAsync(row.Media.Url)
+            ? "Link copied."
+            : "Clipboard is busy. Try again.";
     }
 
     private void Close_Click(object sender, RoutedEventArgs e) => Close();

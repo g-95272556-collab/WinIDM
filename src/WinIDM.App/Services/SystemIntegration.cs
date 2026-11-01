@@ -1,6 +1,5 @@
 using System.Diagnostics;
 using System.IO;
-using System.Net.NetworkInformation;
 using System.Runtime.InteropServices;
 using Microsoft.Win32;
 
@@ -133,45 +132,19 @@ public static class PowerState
     }
 }
 
-/// <summary>Network status for the Wi-Fi-only policy and metered warnings.</summary>
-public sealed record NetworkStatus(bool Connected, bool IsWifi, bool IsMetered)
+/// <summary>
+/// Status-bar view of the engine's network policy. The engine enforces Wi-Fi only and pause-on-metered itself;
+/// this only describes the same <see cref="WinIDM.Engine.INetworkPolicy"/> state, so the label and the policy never disagree.
+/// </summary>
+public sealed record NetworkStatus(bool Online, bool WifiOrEthernet, bool Metered)
 {
-    public string Label => !Connected ? "No connection"
-        : IsMetered ? (IsWifi ? "Wi-Fi (metered)" : "Mobile data / metered")
-        : IsWifi ? "Wi-Fi" : "Wired connection";
-}
+    public static NetworkStatus From(WinIDM.Engine.INetworkPolicy policy) =>
+        new(policy.IsOnline, policy.IsWifiOrEthernet, policy.IsMetered);
 
-public static class NetworkPolicy
-{
-    /// <summary>
-    /// Status from the managed APIs only. The interface that has a default gateway determines
-    /// whether the connection is Wi-Fi. Metered connection detection is not implemented yet (see the report).
-    /// </summary>
-    public static NetworkStatus Current()
-    {
-        try
-        {
-            if (!NetworkInterface.GetIsNetworkAvailable()) return new NetworkStatus(false, false, false);
+    public string Label => !Online ? "No connection"
+        : Metered ? (WifiOrEthernet ? "Metered connection" : "Mobile data (metered)")
+        : WifiOrEthernet ? "Wi-Fi / wired" : "Mobile data";
 
-            NetworkInterface? active = null;
-            foreach (var ni in NetworkInterface.GetAllNetworkInterfaces())
-            {
-                if (ni.OperationalStatus != OperationalStatus.Up) continue;
-                if (ni.NetworkInterfaceType is NetworkInterfaceType.Loopback or NetworkInterfaceType.Tunnel) continue;
-                if (ni.GetIPProperties().GatewayAddresses.Count == 0) continue;
-                active ??= ni;
-            }
-            bool wifi = active?.NetworkInterfaceType == NetworkInterfaceType.Wireless80211;
-            return new NetworkStatus(true, wifi, IsMetered: false);
-        }
-        catch (Exception ex) when (ex is NetworkInformationException or InvalidOperationException)
-        {
-            AppLog.Error("Network status", ex);
-            return new NetworkStatus(NetworkInterface.GetIsNetworkAvailable(), false, false);
-        }
-    }
-
-    /// <summary>Downloads are allowed when Wi-Fi only is off, or when the connection is Wi-Fi.</summary>
-    public static bool IsAllowed(bool wifiOnly, NetworkStatus status) =>
-        status.Connected && (!wifiOnly || status.IsWifi);
+    /// <summary>True when "Wi-Fi only" is on and the engine is holding downloads back for it.</summary>
+    public bool BlocksWifiOnly(bool wifiOnly) => wifiOnly && Online && !WifiOrEthernet;
 }

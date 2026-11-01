@@ -55,17 +55,18 @@ exclusively during the tests (see "What cannot be fully automated" below). No in
 
 1. **Copy link threw an unhandled exception** (`src\WinIDM.App\ViewModels\MainViewModel.cs`, `CopyLink`).
    `Clipboard.SetDataObject` can throw `COMException` when the clipboard is locked. That exception
-   reached the global handler and showed "An unexpected error occurred". Fix: retry up to 5 times
-   (300 ms delay), then show the message "The clipboard is in use by another app. Try again.". Regression: `S04B`.
+   reached the global handler and showed "An unexpected error occurred". Fix: `Services\ClipboardWriter`
+   retries up to 5 times with an awaited 150 ms delay (the UI thread never sleeps), then shows the message
+   "The clipboard is in use by another app. Try again.". The browser's Copy link, the Quality window and the
+   torrent magnet copy use the same writer, so all of them carry the CPFROM1DM marker. Regression: `S04B`.
 2. **The ad blocker rules and whitelist in `adblock.json` had no effect in the browser**
    (`src\WinIDM.App\Services\BrowserServices.cs`, `RebuildEngine`).
    `Composition.AdBlocker` loads `adblock.json`, but the browser used `BrowserServices.Engine`,
    which was built only from the filter lists and host whitelist. Fix: `RebuildEngine` now also
    calls `AdblockConfigStore.ApplyTo(engine)`. Regression: `S06` (`/ads/*` blocking).
 
-Also noticed, not fixed (out of scope): `Clipboard.SetText` calls without COMException handling in
-`ViewModels\TorrentViewModel.cs`, `ViewModels\PasswordManagerViewModel.cs`,
-`Views\BrowserWindow.xaml.cs` (`CopyLink_Click`) and `Views\Browser\BrowserQualityWindow.xaml.cs`.
+Still a plain `Clipboard.SetText` (the global handler catches a locked clipboard): `Views\TextInfoWindow.xaml.cs`
+and the user-script `GM_setClipboard` bridge. `PasswordManagerViewModel` handles the exception itself.
 
 ## What cannot be automated fully
 

@@ -4,7 +4,6 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.IO;
 using System.Media;
-using System.Net.NetworkInformation;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Threading;
@@ -65,10 +64,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private readonly Dispatcher _ui;
     private readonly ConcurrentDictionary<long, DownloadProgress> _pendingProgress = new();
     private readonly DispatcherTimer _flushTimer;
-    private readonly HashSet<long> _pausedByPolicy = new();
-    private readonly NetworkAvailabilityChangedEventHandler _netAvailHandler;
-    private readonly NetworkAddressChangedEventHandler _netAddrHandler;
+    private readonly EventHandler _networkHandler;
     private readonly Action<string> _settingsHandler;
+    private bool _wifiOnlyBlocked;
     private int _lastActive = -1;
 
     public static IReadOnlyList<SortOption> SortOptions { get; } = new[]
@@ -105,10 +103,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _flushTimer = new DispatcherTimer(TimeSpan.FromMilliseconds(300), DispatcherPriority.Background, (_, _) => FlushProgress(), _ui);
         _flushTimer.Start();
 
-        _netAvailHandler = (_, _) => _ui.BeginInvoke(new Action(() => _ = ApplyNetworkPolicyAsync()));
-        _netAddrHandler = (_, _) => _ui.BeginInvoke(new Action(() => _ = ApplyNetworkPolicyAsync()));
-        NetworkChange.NetworkAvailabilityChanged += _netAvailHandler;
-        NetworkChange.NetworkAddressChanged += _netAddrHandler;
+        // Raised on a background thread by Windows.Networking.Connectivity.
+        _networkHandler = (_, _) => _ui.BeginInvoke(new Action(UpdateNetworkStatus));
+        _c.Network.Changed += _networkHandler;
 
         _settingsHandler = key => _ui.BeginInvoke(new Action(() => OnSettingChanged(key)));
         _c.Settings.Changed += _settingsHandler;
@@ -149,8 +146,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         _flushTimer.Stop();
         _c.Engine.ProgressChanged -= OnEngineProgress;
         _c.Engine.ItemChanged -= OnEngineItem;
-        NetworkChange.NetworkAvailabilityChanged -= _netAvailHandler;
-        NetworkChange.NetworkAddressChanged -= _netAddrHandler;
+        _c.Network.Changed -= _networkHandler;
         _c.Settings.Changed -= _settingsHandler;
     }
 
@@ -161,7 +157,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         foreach (var it in items.OrderBy(i => i.SortOrder)) Rows.Add(new DownloadRowViewModel(it, BitsSpeed));
         RefreshAll();
         _lastActive = ActiveCount;
-        await ApplyNetworkPolicyAsync();
+        UpdateNetworkStatus();
     }
 
     private bool BitsSpeed() => _c.Settings.Bool(Keys.ShowBits);
@@ -331,7 +327,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
                 RefreshAll();
                 break;
             case Keys.WifiOnly:
-                _ = ApplyNetworkPolicyAsync();
+                UpdateNetworkStatus();
                 break;
             case Keys.WakeLock:
             case Keys.KeepScreenOn:
@@ -340,37 +336,17 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         }
     }
 
-    // ---------- Network policy (Wi-Fi only) ----------
+    // ---------- Network status (the engine enforces Wi-Fi only / metered; this only reports it) ----------
 
-    private async Task ApplyNetworkPolicyAsync()
+    private void UpdateNetworkStatus()
     {
-        var st = NetworkPolicy.Current();
-        NetworkText = st.Label;
-        bool wifiOnly = _c.Settings.Bool(Keys.WifiOnly);
-        try
-        {
-            if (wifiOnly && st.Connected && !st.IsWifi)
-            {
-                var toPause = Rows.Where(r => r.IsActive).Select(r => r.Id).ToList();
-                if (toPause.Count == 0) return;
-                foreach (var id in toPause)
-                {
-                    _pausedByPolicy.Add(id);
-                    await _c.Engine.PauseAsync(id);
-                }
-                NotifyRequested?.Invoke("Downloads paused", "The connection is not Wi-Fi and the Wi-Fi only setting is on.", false);
-            }
-            else if (st.Connected && (!wifiOnly || st.IsWifi) && _pausedByPolicy.Count > 0)
-            {
-                var ids = _pausedByPolicy.ToList();
-                _pausedByPolicy.Clear();
-                foreach (var id in ids) await _c.Engine.ResumeAsync(id);
-            }
-        }
-        catch (Exception ex)
-        {
-            AppLog.Error("Network policy", ex);
-        }
+        var st = NetworkStatus.From(_c.Network);
+        bool blocked = st.BlocksWifiOnly(_c.Settings.Bool(Keys.WifiOnly));
+        NetworkText = blocked ? $"{st.Label} - waiting for Wi-Fi" : st.Label;
+        // Tell the user once when Wi-Fi only starts holding downloads back (the engine re-queues and resumes them).
+        if (blocked && !_wifiOnlyBlocked && ActiveCount > 0)
+            NotifyRequested?.Invoke("Downloads waiting", "Wi-Fi only is on and the connection is mobile data. Downloads resume on Wi-Fi or a wired network.", false);
+        _wifiOnlyBlocked = blocked;
     }
 
     // ---------- Main commands ----------
@@ -487,32 +463,11 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     }
 
     [RelayCommand]
-    private void CopyLink(DownloadRowViewModel? row)
+    private async Task CopyLinkAsync(DownloadRowViewModel? row)
     {
         if (row is null) return;
-        // The CPFROM1DM marker tells the clipboard monitor not to offer this link as a new download.
-        var data = new DataObject();
-        data.SetText(row.Url);
-        data.SetData("CPFROM1DM", true);
-        // The clipboard can be locked briefly (for example by the clipboard monitor or another app).
-        // Retry with a short backoff; if it still fails, tell the user and never leave an unhandled exception.
-        for (int attempt = 1; ; attempt++)
-        {
-            try
-            {
-                Clipboard.SetDataObject(data, true);
-                return;
-            }
-            catch (System.Runtime.InteropServices.COMException) when (attempt < 12)
-            {
-                Thread.Sleep(250);
-            }
-            catch (System.Runtime.InteropServices.COMException)
-            {
-                _shell.ShowMessage("Copy link", "The clipboard is in use by another app. Try again.", error: true);
-                return;
-            }
-        }
+        if (!await ClipboardWriter.TryCopyLinkAsync(row.Url))
+            _shell.ShowMessage("Copy link", "The clipboard is in use by another app. Try again.", error: true);
     }
 
     [RelayCommand]

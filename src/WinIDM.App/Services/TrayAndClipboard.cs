@@ -176,7 +176,7 @@ public sealed class ClipboardMonitor : IDisposable
     {
         try
         {
-            if (Clipboard.ContainsData("CPFROM1DM")) return;
+            if (Clipboard.ContainsData(ClipboardWriter.FromAppFormat)) return;
             if (!Clipboard.ContainsText()) return;
             var line = UrlHelper.FirstLine(Clipboard.GetText());
             if (line is null || line == _lastSeen) return;

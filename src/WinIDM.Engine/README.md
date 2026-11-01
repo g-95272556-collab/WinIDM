@@ -57,7 +57,7 @@ The Windows interpretation of the settings:
 
 - Downloads stopped by policy go back to **Queued** and restart automatically once allowed (unlike Paused, which the user starts). A user pause stays Paused.
 - Re-evaluation happens on the `Changed` event and every 1 second (tick). Downloads resume from the checkpoint (ranges), not from zero.
-- This is the only pause-on-metered policy. The App Settings row "Pause downloads on a metered network" writes this same key and starts no separate pause loop.
+- This is the only network policy. The App Settings rows "Wi-Fi only" and "Pause downloads on a metered network" write these same keys and start no separate pause loop; the main window's status bar only describes the same `NetworkPolicyAdapter` instance (`Composition.Network`, `NetworkStatus`).
 - Quota counts are stored in settings (`winidm_metered_usage_day`, `_day_bytes`, `_month`, `_month_bytes`) so they persist across restarts. Written every tick (1 second) and when the engine closes. Days and months are measured in local time.
 - Engine `Dispose` disposes the policy if it is `IDisposable`.
 

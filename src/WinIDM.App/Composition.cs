@@ -31,6 +31,8 @@ public sealed class Composition
     public IDownloadEngine Engine { get; private set; } = null!;
     /// <summary>Concrete engine class (DownloadCompleted, DownloadFailed, AfterDownloadsFinished events).</summary>
     public DownloadEngine EngineImpl { get; private set; } = null!;
+    /// <summary>The network policy the engine enforces (Wi-Fi only, metered); the UI reads it only to show status.</summary>
+    public INetworkPolicy Network { get; private set; } = null!;
     /// <summary>Concrete class (extra torrent API: files, trackers, limits, recheck). It also fulfills <see cref="ITorrentService"/>.</summary>
     public TorrentService Torrent { get; private set; } = null!;
     /// <summary>Backup and restore (with password context and minimum password rules).</summary>
@@ -71,7 +73,8 @@ public sealed class Composition
         IDownloadRepository repo = sqlite;
         // DNS resolver (system / DoH / DoT) for download connections. Re-read from settings.
         var dnsResolver = new DnsHostResolver(raw);
-        var engineImpl = new DownloadEngine(repo, raw, hostResolver: dnsResolver.ResolveAsync, network: new NetworkPolicyAdapter());
+        var network = new NetworkPolicyAdapter();
+        var engineImpl = new DownloadEngine(repo, raw, hostResolver: dnsResolver.ResolveAsync, network: network);
         IDownloadEngine engine = engineImpl;
         var torrent = new TorrentService(raw, dataDir);
 
@@ -101,6 +104,7 @@ public sealed class Composition
         c.Repository = repo;
         c.Engine = engine;
         c.EngineImpl = engineImpl;
+        c.Network = network;
         c.Torrent = torrent;
         c.Backup = backup;
         c.Destinations = destinations;

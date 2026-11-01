@@ -309,7 +309,7 @@ public sealed partial class TorrentViewModel : ObservableObject, IDisposable
 
     /// <summary>Copy the selected torrent's magnet link to the clipboard.</summary>
     [RelayCommand]
-    private void CopyMagnet()
+    private async Task CopyMagnetAsync()
     {
         if (Selected is null) return;
         try
@@ -320,8 +320,10 @@ public sealed partial class TorrentViewModel : ObservableObject, IDisposable
                 Status = "Magnet link not available.";
                 return;
             }
-            Clipboard.SetText(magnet);
-            Status = "Magnet link copied.";
+            // Marked as the app's own copy, so the clipboard monitor does not offer it back as a new download.
+            Status = await ClipboardWriter.TryCopyLinkAsync(magnet)
+                ? "Magnet link copied."
+                : "The clipboard is in use by another app. Try again.";
         }
         catch (Exception ex) when (ex is KeyNotFoundException or InvalidOperationException)
         {
