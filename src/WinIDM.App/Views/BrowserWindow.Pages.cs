@@ -26,6 +26,7 @@ public partial class BrowserWindow
         var headers = e.Request.Headers;
         if (_c.Settings.Bool(Keys.DoNotTrack)) headers.SetHeader("DNT", "1");
         if (_c.Settings.Bool(Keys.SaveData)) headers.SetHeader("Save-Data", "on");
+        if (_c.Settings.Bool(Keys.GlobalPrivacyControl)) headers.SetHeader("Sec-GPC", "1");
 
         // Navigation documents are not cookie-blocked (that would break sign-in). Blocking applies to subresources only.
         if (_c.Settings.Bool(Keys.BlockThirdPartyCookies)

@@ -316,6 +316,7 @@ public partial class BrowserWindow : Window
         if (_c.Settings.Bool(Keys.WebRtcBlock) || proxyWebRtc)
             await core.AddScriptToExecuteOnDocumentCreatedAsync(WebRtcBlockScript);
 
+        await WireShieldsAsync(tab, core);
         WireScripts(tab, core);
         WireBrowserTools(core);
         await WirePasswordAssistAsync(tab, core);

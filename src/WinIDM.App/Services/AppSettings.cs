@@ -11,6 +11,7 @@ public static class Keys
     public const string DnsDotHost = "dns_dot_host";
     public const string DoNotTrack = "do_not_track";
     public const string SaveData = "save_data";
+    public const string GlobalPrivacyControl = "browser.gpc";
     public const string BlockThirdPartyCookies = "third_party";
     public const string SkipEditor = "idm_pref_skip_editor";
     public const string AutoStart = "skip_editor_auto_start";
