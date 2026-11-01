@@ -72,6 +72,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
     private readonly EventHandler _networkHandler;
     private readonly Action<string> _settingsHandler;
     private bool _wifiOnlyBlocked;
+    private DateTime _quietAddsUntil = DateTime.MinValue;
     private int _lastActive = -1;
 
     public static IReadOnlyList<SortOption> SortOptions { get; } = new[]
@@ -98,6 +99,14 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         RowsView.Filter = Filter;
         RowsView.CustomSort = Comparer<object>.Create(Compare);
 
+        // Separate view of the running rows for the overlay window (independent of the selected tab and filters).
+        ActiveRowsView = new ListCollectionView(Rows)
+        {
+            Filter = o => o is DownloadRowViewModel { IsActive: true },
+            IsLiveFiltering = true,
+        };
+        ActiveRowsView.LiveFilteringProperties.Add(nameof(DownloadRowViewModel.IsActive));
+
         _selectedFileType = FileTypeOptions[0];
         _selectedSort = SortOptions[0];
         _selectedTimeFilter = TimeFilterOptions[0];
@@ -120,6 +129,8 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     public ObservableCollection<DownloadRowViewModel> Rows { get; } = new();
     public ListCollectionView RowsView { get; }
+    /// <summary>Running downloads only, for the overlay window.</summary>
+    public ListCollectionView ActiveRowsView { get; }
     public ObservableCollection<TabItemViewModel> Tabs { get; } = new();
     /// <summary>Rows selected in the list (kept in sync by the code-behind).</summary>
     public ObservableCollection<DownloadRowViewModel> SelectedRows { get; } = new();
@@ -251,7 +262,24 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         CompletedCountStat = completed;
         TotalCountStat = Rows.Count;
         HasNoRows = Rows.Count == 0;
+
+        long done = active.Where(r => r.TotalBytes > 0).Sum(r => r.Item.DownloadedBytes);
+        long total = active.Where(r => r.TotalBytes > 0).Sum(r => r.TotalBytes);
+        var percent = total > 0 ? $" - {done * 100.0 / total:0}%" : "";
+        var summary = active.Count == 0 ? null : $"{active.Count} active{percent} - {Fmt.Speed(speed, BitsSpeed())}";
+        if (summary != _traySummary)
+        {
+            _traySummary = summary;
+            TraySummaryChanged?.Invoke(summary);
+        }
     }
+
+    private string? _traySummary;
+
+    /// <summary>One-line progress for the tray tooltip and the combined overlay line; null when nothing is running.</summary>
+    public event Action<string?>? TraySummaryChanged;
+
+    public string? TraySummary => _traySummary;
 
     // ---------- Engine events ----------
 
@@ -289,6 +317,9 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         if (row is null)
         {
             Rows.Add(new DownloadRowViewModel(item, BitsSpeed));
+            // IDM+ "download added" toast; a batch or import reports once instead of once per link.
+            if (!_c.Settings.Bool(Keys.NoAddedToast) && DateTime.UtcNow >= _quietAddsUntil)
+                NotifyRequested?.Invoke("Download added", item.FileName, false);
         }
         else
         {
@@ -302,9 +333,13 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
 
     private void OnStateTransition(DownloadRowViewModel row, DownloadState prev)
     {
-        if (row.State == DownloadState.Completed && prev != DownloadState.Completed)
+        if (row.State == DownloadState.Downloading && prev is not (DownloadState.Downloading or DownloadState.Connecting))
         {
-            if (_c.Settings.Bool(Keys.Sound)) SystemSounds.Asterisk.Play();
+            SoundService.Play(_c.Settings, Keys.SoundStart);
+        }
+        else if (row.State == DownloadState.Completed && prev != DownloadState.Completed)
+        {
+            SoundService.Play(_c.Settings, Keys.SoundComplete);
             if (_c.Settings.Bool(Keys.RemoveFinished))
             {
                 Rows.Remove(row);
@@ -313,7 +348,7 @@ public sealed partial class MainViewModel : ObservableObject, IDisposable
         }
         else if (row.State == DownloadState.Error && prev != DownloadState.Error)
         {
-            if (_c.Settings.Bool(Keys.Sound)) SystemSounds.Hand.Play();
+            SoundService.Play(_c.Settings, Keys.SoundError);
         }
     }
 

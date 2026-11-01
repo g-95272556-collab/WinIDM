@@ -54,6 +54,26 @@ public static class Keys
     public const string ShowTimeFilter = "idm_pref_show_time_filter";
     public const string AutoOpenWebPages = "idm_pref_auto_open_webpage_browser";
 
+    // Notifications, sounds and the overlay window (03a: Notification, Overlay)
+    public const string Notifications = "idm_pref_notifications";
+    public const string NoAddedToast = "idm_pref_disable_toast_download_added_started";
+    public const string SoundStart = "idm_pref_sound_ringtone_start";
+    public const string SoundError = "idm_pref_sound_ringtone_error";
+    public const string SoundComplete = "idm_pref_sound_ringtone_complete";
+    public const string SoundCompleteAll = "idm_pref_sound_ringtone_complete_all";
+    public const string Overlay = "idm_pref_show_window_overlay";
+    public const string OverlayCombine = "idm_pref_combine_notifications_overlay";
+    public const string OverlayWidth = "idm_pref_window_width_overlay";
+    public const string OverlayHeight = "idm_pref_window_height_overlay";
+    public const string OverlayTextSize = "idm_pref_text_size_overlay";
+    public const string OverlayTextColor = "idm_pref_overlay_text_color";
+    public const string OverlayBackground = "idm_pref_background_color_overlay";
+    public const string OverlayProgressColor = "idm_pref_progressbar_color_overlay";
+    public const string OverlayHAlign = "idm_pref_horizontal_alignment_overlay";
+    public const string OverlayVAlign = "idm_pref_vertical_alignment_overlay";
+    public const string OverlayHOffset = "idm_pref_horizontal_offset_overlay";
+    public const string OverlayVOffset = "idm_pref_vertical_offset_overlay";
+
     // Browser
     public const string BrowserJs = "cb_javascript";
     public const string BrowserBlockImages = "cb_images";

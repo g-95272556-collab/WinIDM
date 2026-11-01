@@ -144,6 +144,7 @@ public sealed partial class MainViewModel
         int added = 0, failed = 0;
         foreach (var request in requests)
         {
+            _quietAddsUntil = DateTime.UtcNow.AddSeconds(5); // one summary instead of a toast per link
             try
             {
                 await _c.Engine.AddAsync(request);

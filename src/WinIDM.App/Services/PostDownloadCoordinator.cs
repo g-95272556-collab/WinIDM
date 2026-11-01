@@ -71,6 +71,7 @@ public sealed class PostDownloadCoordinator : IDisposable
 
     private void OnAfterDownloadsFinished(SystemActionRequest request)
     {
+        if (request.CompletedCount > 0) Dispatch(() => SoundService.Play(_c.Settings, Keys.SoundCompleteAll));
         if (request.Action == SystemAction.None) return;
         Dispatch(() => RunWithConfirmation(request));
     }

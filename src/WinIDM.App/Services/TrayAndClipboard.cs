@@ -92,7 +92,26 @@ public sealed class TrayService : IDisposable
     public void SetStatus(int activeCount)
     {
         _statusItem.Text = activeCount == 0 ? "No active downloads" : $"Active downloads: {activeCount}";
-        var text = activeCount == 0 ? "WinIDM" : $"WinIDM - {activeCount} active";
+        if (activeCount == 0) _detail = null;
+        ApplyTooltip(activeCount);
+    }
+
+    private string? _detail;
+    private int _active;
+
+    /// <summary>Live progress line in the tooltip and menu (03a: idm_pref_notifications); null shows only the count.</summary>
+    public void SetDetail(string? detail)
+    {
+        _detail = detail;
+        if (detail is not null) _statusItem.Text = detail;
+        ApplyTooltip(_active);
+    }
+
+    private void ApplyTooltip(int activeCount)
+    {
+        _active = activeCount;
+        var text = _detail is not null ? $"WinIDM - {_detail}"
+            : activeCount == 0 ? "WinIDM" : $"WinIDM - {activeCount} active";
         _icon.Text = text.Length > 63 ? text[..63] : text; // the NotifyIcon text limit is 63 characters
     }
 

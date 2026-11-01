@@ -108,11 +108,18 @@ public static class SettingsCatalog
 
         // --- Notifications ---
         const string Nt = "Tray notifications";
-        B("idm_pref_notifications", "Show notifications during downloads", true, CatNotification, Nt, SettingStatus.Pending);
+        B("idm_pref_notifications", "Show download progress in the tray icon while downloading", true, CatNotification, Nt);
+        B("idm_pref_disable_toast_download_added_started", "Do not show a notification when a download is added", false, CatNotification, Nt);
         B("idm_pref_show_toast_complete", "Show a notification when a download completes", false, CatNotification, Nt);
         B("idm_pref_show_toast_error", "Show a notification when a download fails", false, CatNotification, Nt);
         B("ddasetm", "Disable all tray notifications (including errors)", false, CatNotification, Nt);
-        B("idm_pref_sound_options", "Play a sound on completion or error", false, CatNotification, Nt);
+        const string Snd = "Sounds";
+        B("idm_pref_sound_options", "Play sounds for download events", false, CatNotification, Snd);
+        const string SoundHint = " (empty = none, default = Windows sound, or a .wav file path)";
+        T("idm_pref_sound_ringtone_start", "Download starts" + SoundHint, "", CatNotification, Snd);
+        T("idm_pref_sound_ringtone_error", "Download errors" + SoundHint, SoundService.Default, CatNotification, Snd);
+        T("idm_pref_sound_ringtone_complete", "Download completes" + SoundHint, SoundService.Default, CatNotification, Snd);
+        T("idm_pref_sound_ringtone_complete_all", "All downloads complete" + SoundHint, SoundService.Default, CatNotification, Snd);
 
         // --- Retry ---
         const string Rt = "Retries";
@@ -173,19 +180,21 @@ public static class SettingsCatalog
         B("app.capture_log", "Capture the application log (off by default; errors are always logged)", false, CatAdvanced, Ad);
         T("app.update_url", "Custom update check URL (https; empty = off)", "", CatAdvanced, Ad);
 
-        // --- Overlay (no Windows counterpart yet) ---
+        // --- Overlay: a progress window that floats above every other window while downloads run ---
         const string Ov = "Overlay window";
-        B("idm_pref_show_window_overlay", "Show the notification window above all windows", false, CatOverlay, Ov, SettingStatus.Pending);
-        I("idm_pref_window_width_overlay", "Window width (%)", 75, CatOverlay, Ov, SettingStatus.Pending);
-        I("idm_pref_window_height_overlay", "Window height (%)", 30, CatOverlay, Ov, SettingStatus.Pending);
-        I("idm_pref_text_size_overlay", "Text size", 11, CatOverlay, Ov, SettingStatus.Pending);
-        T("idm_pref_overlay_text_color", "Text color", "#FFFFFF", CatOverlay, Ov, SettingStatus.Pending);
-        T("idm_pref_background_color_overlay", "Background color", "#CCF46C36", CatOverlay, Ov, SettingStatus.Pending);
-        T("idm_pref_progressbar_color_overlay", "Progress bar color", "#CC8CA638", CatOverlay, Ov, SettingStatus.Pending);
-        C("idm_pref_horizontal_alignment_overlay", "Horizontal alignment", "Left", new[] { "Left", "Center", "Right" }, CatOverlay, Ov, SettingStatus.Pending);
-        C("idm_pref_vertical_alignment_overlay", "Vertical alignment", "Top", new[] { "Top", "Center", "Bottom" }, CatOverlay, Ov, SettingStatus.Pending);
-        I("idm_pref_horizontal_offset_overlay", "Horizontal offset", 0, CatOverlay, Ov, SettingStatus.Pending);
-        I("idm_pref_vertical_offset_overlay", "Vertical offset", 0, CatOverlay, Ov, SettingStatus.Pending);
+        B("idm_pref_show_window_overlay", "Show the progress window above all windows while downloading", false, CatOverlay, Ov);
+        B("idm_pref_combine_notifications_overlay", "Combine all downloads into one line", false, CatOverlay, Ov);
+        // Percent of the screen work area (IDM+ uses 75 x 30 of a phone screen; a desktop needs a smaller default).
+        I("idm_pref_window_width_overlay", "Window width (% of the screen)", 25, CatOverlay, Ov);
+        I("idm_pref_window_height_overlay", "Window height (% of the screen)", 18, CatOverlay, Ov);
+        I("idm_pref_text_size_overlay", "Text size", 11, CatOverlay, Ov);
+        T("idm_pref_overlay_text_color", "Text color", "#FFFFFF", CatOverlay, Ov);
+        T("idm_pref_background_color_overlay", "Background color", "#CCF46C36", CatOverlay, Ov);
+        T("idm_pref_progressbar_color_overlay", "Progress bar color", "#CC8CA638", CatOverlay, Ov);
+        C("idm_pref_horizontal_alignment_overlay", "Horizontal alignment", "Right", new[] { "Left", "Center", "Right" }, CatOverlay, Ov);
+        C("idm_pref_vertical_alignment_overlay", "Vertical alignment", "Bottom", new[] { "Top", "Center", "Bottom" }, CatOverlay, Ov);
+        I("idm_pref_horizontal_offset_overlay", "Horizontal offset (px)", 16, CatOverlay, Ov);
+        I("idm_pref_vertical_offset_overlay", "Vertical offset (px)", 16, CatOverlay, Ov);
 
         // --- Browser ---
         const string BU = "General", BP = "Display", BPr = "Privacy and security", BT = "Tabs and windows";

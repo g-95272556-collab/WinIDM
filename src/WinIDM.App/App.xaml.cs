@@ -15,6 +15,7 @@ public partial class App : Application
     private MainViewModel? _vm;
     private MainWindow? _main;
     private TrayService? _tray;
+    private OverlayController? _overlay;
     private ClipboardMonitor? _clipboard;
     private bool _exiting;
     private bool _skipBackupOnExit;
@@ -81,6 +82,8 @@ public partial class App : Application
         _tray.QuickActionRequested += RunQuickAction;
 
         _vm.ActiveCountChanged += n => _tray.SetStatus(n);
+        // Overlay progress window and the tray progress line.
+        _overlay = new OverlayController(_c, _vm, _tray, () => _shell.ShowMainWindow());
         _vm.NotifyRequested += (title, text, error) =>
         {
             if (!_c.Settings.Bool(Keys.DisableAllToasts)) _tray.Notify(title, text, error);
@@ -351,6 +354,7 @@ public partial class App : Application
         }
         _c?.BackupAutomation.Dispose();
         _post?.Dispose();
+        _overlay?.Dispose();
         _main?.Close();
         _clipboard?.Dispose();
         _server?.Dispose();
@@ -366,6 +370,7 @@ public partial class App : Application
         var shell = new ShellService(c);
         var vm = new MainViewModel(c, shell);
         _ = new MainWindow(vm, shell, c);
+        new OverlayWindow(vm.ActiveRowsView).Apply(c.Settings);
         _ = new SettingsWindow(new SettingsViewModel(c.Settings, c.RawSettings));
         _ = new AddUrlWindow(new AddUrlViewModel(c, new DownloadRequest { Url = "https://example.com/file.zip" }));
         _ = new BackupWindow(c, shell);
